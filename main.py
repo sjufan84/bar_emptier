@@ -87,7 +87,7 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
 # Define the function to get the information about the cocktail
 def get_cocktail_info():
     # Build the form 
-    with st.form('bar_emptier', clear_on_submit=True):
+    with st.form('bar_emptier'):
         # Start by getting the input for the liquor that the user is trying to use up
         liquor = st.text_input('What liquor are you trying to use up?')
         # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
