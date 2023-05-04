@@ -26,23 +26,45 @@ if "cocktail_page" not in st.session_state:
 # Define a function to allow the user to be able to send menu text to the API and build a recipe\
 # based on the menu text
 
-def get_menu_cocktail_recipe(liquor, cocktail_type, menu_text):
+def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
     # Define the messages
+    # If there is a food menu in session state, add a message to the messages list
+    if st.session_state.food_menu != "":
+        food_menu_message = {
+            "role": "user", "content": f"Food Menu: {st.session_state.food_menu}"
+        }
+    # If there is a drink menu in session state, add a message to the messages list
+    if st.session_state.drink_menu != "":
+        drink_menu_message = {
+            "role": "user", "content": f"Drink Menu: {st.session_state.drink_menu}"
+        }
+        
+
     messages = [
         {
             "role": "system", "content" : f"You are a master mixologist helping the user create an innvoative cocktail to use up their excess liquor" 
         },
         {
-            "role": "user", "content": f"Given the following parameters: the name of the liquor {liquor} I am trying to use up, the type of cocktail {cocktail_type}, and the menu text {menu_text},\
-                                     please help me come up with a creative cocktail with a fun and creative name that fits in well with the overall theme of the menu,\
-                                     and is not similar to any of the other cocktails on the menu, if any.   Please be as specific as possible with your instructions.\
-                                     Also include why you think this cocktail would be a good fit for the menu.  Thanks!"
+            "role": "user", "content": f"Given the following parameters: the name of the liquor {liquor} I am trying to use up, the type of cocktail {cocktail_type}, and the theme {theme},\
+                                    please help me come up with a creative cocktail with a fun and creative name that fits in well with the overall theme of the food menu referenced above, if any\
+                                    and is not similar to any of the other cocktails on the drink menu referenced above, if any.   Please be as specific as possible with your instructions.\
+                                    Also include why you think this cocktail would be a good fit for the menu or menus.  Thanks!"
         },
         {
             "role": "user", "content": "Please use the following format:\
                                         \n\nRecipe Name: \n\nIngredients: \n\nInstructions: \n\nWhy this cocktail fits the menu: \n\n"
         }
     ]
+
+    # If there is a drink message or food message or both, add them to the messages list after the first message
+    if st.session_state.food_menu != "" and st.session_state.drink_menu != "":
+        messages.insert(1, food_menu_message)
+        messages.insert(2, drink_menu_message)
+    elif st.session_state.food_menu != "":
+        messages.insert(1, food_menu_message)
+    elif st.session_state.drink_menu != "":
+        messages.insert(1, drink_menu_message)
+        
     # Call the OpenAI API
     try:
         response = openai.ChatCompletion.create(

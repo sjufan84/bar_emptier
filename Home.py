@@ -20,7 +20,7 @@ def init_session_variables():
 
 # Reset the pages to their default values if someone returns to the home page
 def reset_pages():
-    st.session_state.cocktail_page = 'get_cocktail_info'
+    st.session_state.cocktail_page = 'get_cocktail_type'
 
 # Initialize the session variables
 init_session_variables()
