@@ -48,11 +48,11 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             "role": "user", "content": f"Given the following parameters: the name of the liquor {liquor} I am trying to use up, the type of cocktail {cocktail_type}, and the theme {theme},\
                                     please help me come up with a creative cocktail with a fun and creative name that fits in well with the overall theme of the food menu referenced above, if any\
                                     and is not similar to any of the other cocktails on the drink menu referenced above, if any.   Please be as specific as possible with your instructions.\
-                                    Also include why you think this cocktail would be a good fit for the menu or menus.  Thanks!"
+                                    Also include why you think this cocktail works with the cocktail and / or / food menus.  Thanks!"
         },
         {
             "role": "user", "content": "Please use the following format:\
-                                        \n\nRecipe Name: \n\nIngredients: \n\nInstructions: \n\nWhy this cocktail fits the menu: \n\n"
+                                        \n\nRecipe Name: \n\nIngredients: \n\nInstructions: \n\nWhy this cocktail works with the menu(s): \n\n"
         }
     ]
 
@@ -64,7 +64,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
         messages.insert(1, food_menu_message)
     elif st.session_state.drink_menu != "":
         messages.insert(1, drink_menu_message)
-        
+
     # Call the OpenAI API
     try:
         response = openai.ChatCompletion.create(

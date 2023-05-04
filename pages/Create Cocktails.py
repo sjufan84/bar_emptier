@@ -20,6 +20,14 @@ def init_cocktail_session_variables():
         if var not in st.session_state:
             st.session_state[var] = default_value
 
+# Reset the pages to their default values
+def reset_pages():
+    st.session_state.menu_page = "upload_menus"
+
+# Initialize the session variables
+init_cocktail_session_variables()
+reset_pages()
+
 
 
 # Define the function to get the information about the cocktail
