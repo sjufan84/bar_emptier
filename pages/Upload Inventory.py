@@ -34,9 +34,8 @@ def init_inventory_session_variables():
 
 async def upload_inventory():
     # Set the page title
-    st.markdown('#### Upload your bar inventory below.  The file must be in CSV or Excel format, but does not need to adhere to any format as long\
-                as the there are columns corresponding to the liquor name and the amount in your inventory.  If it is too confusing for you to read,\
-                there is a good chance it will be too confusing for the model to read as well.')
+    st.markdown('##### Upload your bar inventory below.  The file must be in CSV or Excel format.  Make sure that the first column is your list of\
+                spirits, and the second column is the list of amounts.  The name of the column is not as important as the values contained within.')
     # Create a file uploader
     uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx', 'xls'])
     upload_file_button = st.button('Upload File')

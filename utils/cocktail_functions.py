@@ -4,6 +4,12 @@ import openai
 import streamlit as st
 import os
 import requests
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel, Field
+from typing import List
+
+
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,15 +22,54 @@ if "cocktail_name" not in st.session_state:
     st.session_state.cocktail_name = ""
 if "recipe" not in st.session_state:
     st.session_state.recipe = ""
+if "recipe_text" not in st.session_state:
+    st.session_state.recipe_text = ""
 if "response" not in st.session_state:
     st.session_state.response = ""
 if "cocktail_page" not in st.session_state:
     st.session_state.cocktail_page = "get_cocktail_info"
+if "parsed_recipe" not in st.session_state:
+    st.session_state.parsed_recipe = None
+if "cocktail_name" not in st.session_state:
+    st.session_state.cocktail_name = ""
+if "ingredients" not in st.session_state:
+    st.session_state.ingredients = []
+if "instructions" not in st.session_state:
+    st.session_state.instructions = []
+if "garnish" not in st.session_state:
+    st.session_state.garnish = ""
+if "glass" not in st.session_state:
+    st.session_state.glass = ""
+
+
+# We want to create a parser object to parse the recipe into the variables we want using Pydantic
+class CocktailRecipe(BaseModel):
+    name: str = Field(description="Name of the cocktail recipe")
+    ingredients: List[str] = Field(description="List of ingredients in the cocktail")
+    instructions: List[str] = Field(description="Instructions for preparing the cocktail")
+    garnish: str = Field(description="Garnish for the cocktail")
+    glass: str = Field(description="Glass to serve the cocktail in")
+
+# Instantiate the parser object
+parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
 
 
 
 # Define a function to allow the user to be able to send menu text to the API and build a recipe\
 # based on the menu text
+
+def text_cocktail_recipe(recipe: CocktailRecipe) -> str:
+    ingredients = "\n".join(recipe.ingredients)
+    instructions = "\n".join(recipe.instructions)
+    formatted_recipe = (
+        f"Recipe Name: {recipe.name}\n\n"
+        f"Ingredients:\n{ingredients}\n\n"
+        f"Instructions:\n{instructions}\n\n"
+        f"Garnish: {recipe.garnish}\n\n"
+        f"Glass: {recipe.glass}"
+    )
+    return formatted_recipe
+
 
 def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
     # Define the messages
@@ -51,8 +96,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
                                     Also include why you think this cocktail works with the cocktail and / or / food menus.  Thanks!"
         },
         {
-            "role": "user", "content": "Please use the following format:\
-                                        \n\nRecipe Name: \n\nIngredients: \n\nInstructions: \n\nWhy this cocktail works with the menu(s): \n\n"
+             "role": "user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n"
         }
     ]
 
@@ -81,7 +125,14 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
         recipe = response.choices[0].message.content
         st.session_state.recipe = recipe
         st.session_state.response = response
-
+        parsed_recipe = parser.parse(recipe)
+        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+        st.session_state.parsed_recipe = parsed_recipe
+        st.session_state.cocktail_name = parsed_recipe.name
+        st.session_state.ingredients = parsed_recipe.ingredients
+        st.session_state.instructions = parsed_recipe.instructions
+        st.session_state.garnish = parsed_recipe.garnish
+        st.session_state.glass = parsed_recipe.glass
 
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
@@ -99,6 +150,9 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             recipe = response.choices[0].message.content
             st.session_state.recipe = recipe
             st.session_state.response = response
+            parsed_recipe = parser.parse(recipe)
+            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+
 
 
         except (requests.exceptions.RequestException, openai.error.APIError):
@@ -113,9 +167,18 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             n=1,
         )
 
-            recipe = response.choices[0].message.content
-            st.session_state.response = response
-            st.session_state.recipe = recipe
+        recipe = response.choices[0].message.content
+        st.session_state.recipe = recipe
+        st.session_state.response = response
+        parsed_recipe = parser.parse(recipe)
+        st.session_state.parsed_recipe = parsed_recipe
+        st.session_state.cocktail_name = parsed_recipe.name
+        st.session_state.ingredients = parsed_recipe.ingredients
+        st.session_state.instructions = parsed_recipe.instructions
+        st.session_state.garnish = parsed_recipe.garnish
+        st.session_state.glass = parsed_recipe.glass
+        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+
             
 
     # Return the recipe
@@ -136,8 +199,7 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
                         necessarily include the name of the spirit or the theme.   Please be as specific as possible with your instructions."
         },
         {
-            "role": "user", "content": "Please use the following format:\
-                                        \n\nRecipe Name: \n\nIngredients: \n\nInstructions: \n\n"
+             "role": "user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n"
         }
     ]
     # Call the OpenAI API
@@ -156,6 +218,15 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         recipe = response.choices[0].message.content
         st.session_state.recipe = recipe
         st.session_state.response = response
+        parsed_recipe = parser.parse(recipe)
+        st.session_state.parsed_recipe = parsed_recipe
+        st.session_state.cocktail_name = parsed_recipe.name
+        st.session_state.ingredients = parsed_recipe.ingredients
+        st.session_state.instructions = parsed_recipe.instructions
+        st.session_state.garnish = parsed_recipe.garnish
+        st.session_state.glass = parsed_recipe.glass
+        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+
 
 
     except (requests.exceptions.RequestException, openai.error.APIError):
@@ -171,8 +242,17 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     )
 
         recipe = response.choices[0].message.content
-        st.session_state.response = response
         st.session_state.recipe = recipe
+        st.session_state.response = response
+        parsed_recipe = parser.parse(recipe)
+        st.session_state.parsed_recipe = parsed_recipe
+        st.session_state.cocktail_name = parsed_recipe.name
+        st.session_state.ingredients = parsed_recipe.ingredients
+        st.session_state.instructions = parsed_recipe.instructions
+        st.session_state.garnish = parsed_recipe.garnish
+        st.session_state.glass = parsed_recipe.glass
+        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+
 
     # Return the recipe
     return recipe

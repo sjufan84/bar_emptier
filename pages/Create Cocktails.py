@@ -23,6 +23,8 @@ def init_cocktail_session_variables():
 # Reset the pages to their default values
 def reset_pages():
     st.session_state.menu_page = "upload_menus"
+    st.session_state.bar_chat_page = "chat_choices"
+    st.session_state.inventory_page = "upload_inventory"
 
 # Initialize the session variables
 init_cocktail_session_variables()
@@ -38,11 +40,14 @@ def get_cocktail_type():
     # Give the user the option to upload a menu or menus for the model to reference when creating the cocktails
     st.success(f'**If you would like to upload your existing food menu, cocktail menu, or both, please do so by clicking below.\
                This can be useful if you want to create a cocktail that fits in well with the overall theme of the menu and is\
-                not similar to any of the other cocktails on the menu, if any.  Otherwise click "Proceed to Cocktail Creation" to\
-                create a cocktail without a menu.**')
+                not similar to any of the other cocktails on the menu, if any.  You can also upload your current inventory\
+                for further contextual recipe creation.  Otherwise click "Proceed to Cocktail Creation" to get started!"**')
     upload_menus_button = st.button('Upload your menu(s)')
     if upload_menus_button:
         switch_page('Upload Menus')
+    upload_inventory_button = st.button('Upload your inventory')
+    if upload_inventory_button:
+        switch_page('Upload Inventory')
     proceed_without_menu_button = st.button('Proceed to Cocktail Creation')
     if proceed_without_menu_button:
         st.session_state.cocktail_page = 'get_cocktail_info'
@@ -95,8 +100,21 @@ def get_menu_cocktail_info():
 
 def display_recipe():
     st.markdown('##### Here is your recipe! 🍸🍹')
-    st.write(st.session_state.recipe)
-
+    st.write(st.session_state.recipe_text)
+    # Display the recipe name
+    st.markdown(f'**{st.session_state["cocktail_name"]}**')
+    # Display the recipe ingredients
+    st.markdown('**Ingredients:**')
+    for ingredient in st.session_state['ingredients']:
+        st.markdown(f'* {ingredient}')
+    # Display the recipe instructions
+    st.markdown('**Instructions:**')
+    for instruction in st.session_state['instructions']:
+        st.markdown(f'* {instruction}')
+    # Display the recipe garnish
+    st.markdown(f'**Garnish:**  {st.session_state.garnish}')
+    # Display the recipe glass
+    st.markdown(f'**Glass:**  {st.session_state.glass}')
     # Save the selected recipe as a PDF
     pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"my_recipe.pdf")
 
@@ -105,6 +123,11 @@ def display_recipe():
 
     # Display the download link
     st.markdown(download_link, unsafe_allow_html=True)
+
+    # Create an option to chat about the recipe
+    chat_button = st.button('Chat with a bartender about this recipe?')
+    if chat_button:
+        switch_page('Cocktail Chat')
    
     # Create a "Create another cocktail" button
     create_another_cocktail_button = st.button('Create another cocktail!')
