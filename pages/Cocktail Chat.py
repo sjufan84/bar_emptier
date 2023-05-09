@@ -6,6 +6,7 @@ from utils.chat_utils import initialize_chat, save_chat_history_dict, add_messag
                              get_recipe_bartender_response, get_general_bartender_response, get_chat_choices
 import openai
 import os
+from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -13,10 +14,10 @@ load_dotenv()
 def init_chat_session_variables():
     # Initialize session state variables
     session_vars = [
-        'recipe', 'bar_chat_page', 'style','attitude', 'initials_seed', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict', 'i'
+        'recipe', 'bar_chat_page', 'style','attitude', 'initials_seed', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict', 'i', 'seed'
     ]
     default_values = [
-        '', 'chat_choices', '', '', '', [], '', '', None, {}, 0
+        '', 'chat_choices', '', '', '', [], '', '', None, {}, 0, "Spooky"
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -48,10 +49,9 @@ reset_pages()
 
 # Define the display recipe and follow up chat function
 def follow_up_recipe_chat():
+    if "seed" not in st.session_state:
+        st.session_state.seed = "Spooky"
     
-
-    # Debug code                                                                                                                                                                                                                                                                                                                    ``11
-    st.write(st.session_state.response)
     # Add 1 to the i in session state so we can create unique widgets
     st.session_state.i += 1
 
@@ -67,7 +67,7 @@ def follow_up_recipe_chat():
     # Create a text area for the user to enter their message
     user_message = st.text_area("What questions do you have about the recipe?", value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
-    submit_user_follow_up_button = st.button("Submit Follow Up Question")
+    submit_user_follow_up_button = st.button("Submit Follow Up Question", type = 'primary', use_container_width=True)
     # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
     if submit_user_follow_up_button:
         with st.spinner('The bartender is thinking about your question...'):
@@ -87,9 +87,27 @@ def follow_up_recipe_chat():
                     message(chat_message['data']['content'], avatar_style='initials', seed = 'SC')
                     st.session_state.i += 1
 
+    # Create space between the chat and the buttons
+    st.write("")
+    st.write("")
+    st.write("")
+
+    # Create a button to allow the user to create a new recipe
+    create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
+    # Upon clicking the create new recipe button, we want to reset the chat history and chat history dictionary
+    # And return to the recipe creation page
+    if create_new_recipe_button:
+        # Reset the chat history and chat history dictionary
+        st.session_state.chat_history_dict = {}
+        st.session_state.chat_messages = []
+        # Return to the recipe creation page
+        st.session_state.bar_chat_page = 'get_cocktail_type'
+        switch_page("Create Cocktails")
+        st.experimental_rerun()
+
 
     # Create a button to allow the user to return to "Chat Home"
-    return_to_chat_home_button = st.button("Return to Chat Home")
+    return_to_chat_home_button = st.button("Return to Chat Home", type = 'primary', use_container_width=True)
     # Upon clicking the return to chat home button, we want to reset the chat history and chat history dictionary
     # And return to the chat home page
     if return_to_chat_home_button:
@@ -132,8 +150,27 @@ def general_chat():
                     message(chat_message['data']['content'], avatar_style='initials', seed = 'UU', key = f'{st.session_state.i}', is_user = True)
                     st.session_state.i += 1
                 elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='initials', seed = f'{st.session_state.seed}')
+                    message(chat_message['data']['content'], avatar_style='minavs', seed = f'{st.session_state.seed}')
                     st.session_state.i += 1
+
+    # Create space between the chat and the buttons
+    st.write("")
+    st.write("")
+    st.write("")
+
+    # Create a button to allow the user to create a new recipe
+    create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
+    # Upon clicking the create new recipe button, we want to reset the chat history and chat history dictionary
+    # And return to the recipe creation page
+    if create_new_recipe_button:
+        # Reset the chat history and chat history dictionary
+        st.session_state.chat_history_dict = {}
+        st.session_state.chat_messages = []
+        # Return to the recipe creation page
+        st.session_state.bar_chat_page = 'get_cocktail_type'
+        switch_page("Create Cocktails")
+        st.experimental_rerun()
+
 
     # Create a button to allow the user to return to "Chat Home"
     return_to_chat_home_button = st.button("Return to Chat Home", type = 'primary', use_container_width=True)

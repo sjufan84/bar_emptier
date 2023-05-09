@@ -5,16 +5,18 @@ import streamlit as st
 from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
 from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
+import asyncio
+from utils.image_utils import generate_image
 from PIL import Image
 
 # Initialize the session state
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list'
     ]
     default_values = [
-        'get_cocktail_type', '', '', ''
+        'get_cocktail_type', '', '', '', None, []
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -43,34 +45,39 @@ load_css('style.css')
 
 # Define the function to get the information about the cocktail
 def get_cocktail_type():
-    # Set the page title
-  
-    # Give the user the option to upload a menu or menus for the model to reference when creating the cocktails
-    st.markdown('''<div style="text-align: center;">
-    <h2 style = "color: black;">Welcome to the Cocktail Creator!</h2>
-    <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
-    be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
-    </div>''', unsafe_allow_html=True)
-    # Create two columns -- one for the upload menu image and button, and one for the upload inventory image and button
-    col1, col2 = st.columns(2, gap="large")
-    with col1:
-        menu_image = Image.open('resources/bar_menu.png')
-        st.image(menu_image, use_column_width=True)
-        upload_menus_button = st.button('Upload your menu(s)', use_container_width=True, type = 'secondary')
-        if upload_menus_button:
-            switch_page('Upload Menus')
-    with col2:
-        inventory_image = Image.open('resources/inventory_image.png')
-        st.image(inventory_image, use_column_width=True)
-        upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'secondary')
-        if upload_inventory_button:
-            switch_page('Upload Inventory')
-    proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
-    if proceed_without_menu_button:
+    # If there is already an inventory or a menu uploaded, proceed to the cocktail creation page
+    # Otherwise, ask the user to upload their inventory or menu
+    if st.session_state.inventory_list or st.session_state.food_menu or st.session_state.drink_menu:
         st.session_state.cocktail_page = 'get_cocktail_info'
         st.experimental_rerun()
+    else:    
+        # Give the user the option to upload a menu or menus for the model to reference when creating the cocktails
+        st.markdown('''<div style="text-align: center;">
+        <h2 style = "color: black;">Welcome to the Cocktail Creator!</h2>
+        <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
+        be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
+        </div>''', unsafe_allow_html=True)
+        st.markdown('<hr>', unsafe_allow_html=True)
+        # Create two columns -- one for the upload menu image and button, and one for the upload inventory image and button
+        col1, col2 = st.columns(2, gap="large")
+        with col1:
+            menu_image = Image.open('resources/bar_menu.png')
+            st.image(menu_image, use_column_width=True)
+            upload_menus_button = st.button('Upload your menu(s)', use_container_width=True, type = 'secondary')
+            if upload_menus_button:
+                switch_page('Upload Menus')
+        with col2:
+            inventory_image = Image.open('resources/inventory_image.png')
+            st.image(inventory_image, use_column_width=True)
+            upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'secondary')
+            if upload_inventory_button:
+                switch_page('Upload Inventory')
+        proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
+        if proceed_without_menu_button:
+            st.session_state.cocktail_page = 'get_cocktail_info'
+            st.experimental_rerun()
 
-def get_cocktail_info():
+async def get_cocktail_info():
 
     # Build the form 
 
@@ -90,7 +97,9 @@ def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            await get_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = await generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
@@ -146,46 +155,62 @@ def get_inventory_cocktail_info():
 
 
 def display_recipe():
-    st.markdown('##### Here is your recipe! 🍸🍹')
-    # Display the recipe name
-    st.markdown(f'**{st.session_state["cocktail_name"]}**')
-    # Display the recipe ingredients
-    st.markdown('**Ingredients:**')
-    for ingredient in st.session_state['ingredients']:
-        st.markdown(f'* {ingredient}')
-    # Display the recipe instructions
-    st.markdown('**Instructions:**')
-    for instruction in st.session_state['instructions']:
-        st.markdown(f'* {instruction}')
-    # Display the recipe garnish
-    st.markdown(f'**Garnish:**  {st.session_state.garnish}')
-    # Display the recipe glass
-    st.markdown(f'**Glass:**  {st.session_state.glass}')
-    # Save the selected recipe as a PDF
-    pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"my_recipe.pdf")
+    # Create the header
+    st.markdown('''<div style="text-align: center;">
+    <h2 style = "color: black;">Here's your recipe!</h1>
+    <hr>    
+    </div>''', unsafe_allow_html=True)
+    # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
+    col1, col2 = st.columns([1.5, 1], gap = "large")
+    with col1:
+        # Display the recipe ingredients
+        st.markdown('**Ingredients:**')
+        for ingredient in st.session_state['ingredients']:
+            st.markdown(f'* {ingredient}')
+        # Display the recipe instructions
+        st.markdown('**Instructions:**')
+        for instruction in st.session_state['instructions']:
+            st.markdown(f'* {instruction}')
+        # Display the recipe garnish
+        st.markdown(f'**Garnish:**  {st.session_state.garnish}')
+        # Display the recipe glass
+        st.markdown(f'**Glass:**  {st.session_state.glass}')
+    with col2:
+        # Display the recipe name
+        st.markdown(f'<div style="text-align: center;"><b>Recipe Name:  </b>{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
+        st.text("")
+        # Display the recipe image
+        st.image(st.session_state.image['output_url'], use_column_width=True)
+        # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
+        st.markdown('''<div style="text-align: center;">
+        <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
+        </div>''', unsafe_allow_html=True)
+        # Save the selected recipe as a PDF
+        pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
 
-    # Generate a download link for the saved PDF
-    download_link = get_recipe_pdf_download_link(pdf_path, f"my_recipe.pdf")
+        # Generate a download link for the saved PDF
+        download_link = get_recipe_pdf_download_link(pdf_path, f"{st.session_state.cocktail_name}.pdf")
 
-    # Display the download link
-    st.markdown(download_link, unsafe_allow_html=True)
+        # Display the download link in a centered div
+        st.markdown(f'''<div style="text-align: center;">
+        <p>{download_link}</p>''', unsafe_allow_html=True)
 
-    # Create an option to chat about the recipe
-    chat_button = st.button('Chat with a bartender about this recipe?', type = 'primary', use_container_width=True)
-    if chat_button:
-        st.session_state.bar_chat_page = "recipe_chat"
-        switch_page('Cocktail Chat')
-   
-    # Create a "Create another cocktail" button
-    create_another_cocktail_button = st.button('Create another cocktail!', type = 'primary', use_container_width=True)
-    if create_another_cocktail_button:
-        st.session_state.cocktail_page = "get_cocktail_info"
-        st.experimental_rerun()
+        # Create an option to chat about the recipe
+        chat_button = st.button('Chat with a bartender about this recipe?', type = 'primary', use_container_width=True)
+        if chat_button:
+            st.session_state.bar_chat_page = "recipe_chat"
+            switch_page('Cocktail Chat')
+    
+        # Create a "Create another cocktail" button
+        create_another_cocktail_button = st.button('Create another cocktail!', type = 'primary', use_container_width=True)
+        if create_another_cocktail_button:
+            st.session_state.cocktail_page = "get_cocktail_info"
+            st.experimental_rerun()
 
 if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()
 elif st.session_state.cocktail_page == "get_cocktail_info":
-    get_cocktail_info()
+    asyncio.run(get_cocktail_info())
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
     get_menu_cocktail_info()
 elif st.session_state.cocktail_page == "get_inventory_cocktail_info":

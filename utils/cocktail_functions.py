@@ -187,7 +187,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
 
 
 # Define the function to call the openai API
-def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
+async def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     # Define the messages
     messages = [
         {

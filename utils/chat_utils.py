@@ -16,10 +16,10 @@ openai.organization = os.getenv("OPENAI_ORG")
 def init_chat_session_variables():
     # Initialize session state variables
     session_vars = [
-        'recipe', 'bar_chat_page', 'style','attitude', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict'
+        'recipe', 'bar_chat_page', 'style','attitude', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict', 'seed'
     ]
     default_values = [
-        '', 'chat_choices', '', '', [], '', '', None, {}
+        '', 'chat_choices', '', '', [], '', '', None, {}, 'Spooky'
     ]
 
     for var, default_value in zip(session_vars, default_values):
