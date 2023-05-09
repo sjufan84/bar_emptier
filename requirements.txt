@@ -10,4 +10,3 @@ mysql-connector-python
 pdfplumber
 google-cloud-vision
 pyspellchecker
-pkg-config
