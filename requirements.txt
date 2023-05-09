@@ -1,4 +1,12 @@
+pandas
 streamlit
 openai
 python-dotenv
 reportlab
+streamlit_extras
+streamlit-chat
+langchain
+mysql-connector-python
+pdfplumber
+google-cloud-vision
+pyspellchecker
