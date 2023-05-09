@@ -10,5 +10,4 @@ mysql-connector-python
 pdfplumber
 google-cloud-vision
 pyspellchecker
-cairo
 pkg-config
