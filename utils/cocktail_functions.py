@@ -257,3 +257,102 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     # Return the recipe
     return recipe
 
+# Create a function to generate a recipe based on the user's inventory if they have one uploaded
+def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
+    messages = [
+    {
+        "role": "system", "content" : f"You are a master mixologist helping the user create an innvoative cocktail to use up their excess liquor" 
+    },
+    {   
+        "role": "user", "content": f"Given the following parameters: the name of the liquor {liquor} I am trying to use up, the type of cocktail {cocktail_type}, the theme {theme},\
+                                and the style of cuisine {cuisine} to pair it with, please help me come up with a creative cocktail with a fun and creative name that doesn't necessarily include the name of the spirit or the theme.\
+                                Please prioritize using the ingredients I have on hand in {st.session_state.inventory_list}, but you can include other ingredients as well if needed.\
+                                Please be as specific as possible with your instructions."
+    },
+    {
+        "role": "user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n"
+    }
+    ]
+
+ 
+
+    # Call the OpenAI API
+    try:
+        response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        max_tokens=1000,
+        frequency_penalty=0.5,
+        presence_penalty=0.5,
+        temperature=1,
+        top_p=0.9,
+        n=1,
+        )
+
+        recipe = response.choices[0].message.content
+        st.session_state.recipe = recipe
+        st.session_state.response = response
+        parsed_recipe = parser.parse(recipe)
+        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+        st.session_state.parsed_recipe = parsed_recipe
+        st.session_state.cocktail_name = parsed_recipe.name
+        st.session_state.ingredients = parsed_recipe.ingredients
+        st.session_state.instructions = parsed_recipe.instructions
+        st.session_state.garnish = parsed_recipe.garnish
+        st.session_state.glass = parsed_recipe.glass
+
+    except (requests.exceptions.RequestException, openai.error.APIError):
+        try:
+            response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=1000,
+            frequency_penalty=0.5,
+            presence_penalty=0.5,
+            temperature=1,
+            top_p=0.9,
+            n=1,
+            )
+
+            recipe = response.choices[0].message.content
+            st.session_state.recipe = recipe
+            st.session_state.response = response
+            parsed_recipe = parser.parse(recipe)
+            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+            st.session_state.parsed_recipe = parsed_recipe
+            st.session_state.cocktail_name = parsed_recipe.name
+            st.session_state.ingredients = parsed_recipe.ingredients
+            st.session_state.instructions = parsed_recipe.instructions
+            st.session_state.garnish = parsed_recipe.garnish
+            st.session_state.glass = parsed_recipe.glass
+
+
+
+        except (requests.exceptions.RequestException, openai.error.APIError):
+            response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0301",
+            messages=messages,
+            max_tokens=1000,
+            frequency_penalty=0.5,
+            presence_penalty=0.5,
+            temperature=1,
+            top_p=0.9,
+            n=1,
+        )
+
+            recipe = response.choices[0].message.content
+            st.session_state.recipe = recipe
+            st.session_state.response = response
+            parsed_recipe = parser.parse(recipe)
+            st.session_state.parsed_recipe = parsed_recipe
+            st.session_state.cocktail_name = parsed_recipe.name
+            st.session_state.ingredients = parsed_recipe.ingredients
+            st.session_state.instructions = parsed_recipe.instructions
+            st.session_state.garnish = parsed_recipe.garnish
+            st.session_state.glass = parsed_recipe.glass
+            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+
+            
+
+    # Return the recipe
+    return recipe

@@ -50,20 +50,20 @@ reset_pages()
 def follow_up_recipe_chat():
     
 
-    # Debug
+    # Debug code                                                                                                                                                                                                                                                                                                                    ``11
     st.write(st.session_state.response)
     # Add 1 to the i in session state so we can create unique widgets
     st.session_state.i += 1
 
     # Display the recipe
-    st.write(st.session_state.recipe)
+    st.write(st.session_state.recipe_text)
 
     # Initialize the chat if the length of the chat history is 0
     if len(st.session_state.chat_history_dict) == 0:
         initial_message = "What questions can I answer for you about the recipe?"
         initialize_chat(initial_message)
-        # Display the initial chef message
-        message(f"{initial_message}", avatar_style='initials', seed = f'{st.session_state.seed}')
+        # Display the initial bartender message
+        message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
     # Create a text area for the user to enter their message
     user_message = st.text_area("What questions do you have about the recipe?", value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
@@ -72,8 +72,8 @@ def follow_up_recipe_chat():
     if submit_user_follow_up_button:
         with st.spinner('The bartender is thinking about your question...'):
             add_message_to_chat(message = user_message, role = 'user')
-            # Generate the response from the chef
-            bartender_response = get_recipe_bartender_response(question = user_message, recipe = st.session_state.recipe)
+            # Generate the response from the bartender
+            bartender_response = get_recipe_bartender_response(question = user_message, recipe = st.session_state.parsed_recipe)
             # Add the response to the chat history
             add_message_to_chat(message = f'{bartender_response}', role = 'ai')
             # Add the new chat history to the chat history dictionary
@@ -107,18 +107,18 @@ def general_chat():
 
     # Initialize the chat if the length of the chat history is 0
     if len(st.session_state.chat_history_dict) == 0:
-        initial_message = "What questions can I answer for you about the recipe?"
+        initial_message = "What questions can I answer for you today?"
         initialize_chat(initial_message)
     
         # Display initial chef message
-        message(f"{initial_message}", avatar_style='initials', seed = f'{st.session_state.seed}')
+        message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
     # Create a text area for the user to enter their message
-    user_message = st.text_area("What questions do you have about the recipe?", value='', height=150, max_chars=None, key=None)
+    user_message = st.text_area('Ask any bar question you might have, i.e. "What is Triple Sec" or "What is the proper muddling technique?', value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
-    submit_user_follow_up_button = st.button("Submit Follow Up Question")
+    submit_user_follow_up_button = st.button("Submit Your Question", type = 'primary', use_container_width=True)
     # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
     if submit_user_follow_up_button:
-        with st.spinner('The chef is thinking about your question...'):
+        with st.spinner('The bartender is thinking about your question...'):
             add_message_to_chat(message = user_message, role = 'user')
             # Generate the response from the chef
             bartender_response = get_general_bartender_response(question = user_message)
@@ -136,7 +136,7 @@ def general_chat():
                     st.session_state.i += 1
 
     # Create a button to allow the user to return to "Chat Home"
-    return_to_chat_home_button = st.button("Return to Chat Home")
+    return_to_chat_home_button = st.button("Return to Chat Home", type = 'primary', use_container_width=True)
     # Upon clicking the return to chat home button, we want to reset the chat history and chat history dictionary
     # And return to the chat home page
     if return_to_chat_home_button:

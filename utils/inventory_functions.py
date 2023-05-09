@@ -1,8 +1,5 @@
 import streamlit as st
 import pandas as pd
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
-from langchain.text_splitter import CharacterTextSplitter
 import openai
 
 import os
@@ -32,30 +29,10 @@ async def process_file(uploaded_file):
             st.error(f'Error processing file: {e}')
             return
 
-# A function to use a document loader and text splitter to vectorize the csv data
-async def vector_df(df):
-
-    # Load in the dataframe document loader
-    from langchain.document_loaders import DataFrameLoader
-    loader = DataFrameLoader(df, page_content_column="liquor")
-    documents = loader.load()
-
-    # Load in the text splitter
-    text_splitter = CharacterTextSplitter(chunk_size=1000)
-    documents = text_splitter.split_documents(documents)
-    embeddings = OpenAIEmbeddings()
-    vectorestore = Chroma.from_documents(documents, embeddings)
-    st.session_state.vectorestore = vectorestore
-
-    return vectorestore
-
-# Define a function to create a memory object which can track the state of the conversation
-async def create_memory_object():
-    from langchain.memory import ConversationBufferMemory
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages = True)
-    st.session_state.memory = memory
-
-    return memory
-    
-
-
+# A function to convert the dataframe into a list of tuples containing the spirit and amount
+# The first column of the dataframe should be the spirit, and the second column should be the amount
+async def create_spirits_list(df):
+    spirits_list = []
+    for index, row in df.iterrows():
+        spirits_list.append((row[0], row[1]))
+    return spirits_list

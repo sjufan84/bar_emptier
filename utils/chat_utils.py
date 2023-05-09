@@ -4,7 +4,7 @@ import openai
 import os
 from langchain.memory import ChatMessageHistory
 from langchain.schema import messages_to_dict
-from streamlit_chat import message
+from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -16,10 +16,10 @@ openai.organization = os.getenv("OPENAI_ORG")
 def init_chat_session_variables():
     # Initialize session state variables
     session_vars = [
-        'recipe', 'bar_chat_page', 'style','attitude', 'initials_seed', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict'
+        'recipe', 'bar_chat_page', 'style','attitude', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict'
     ]
     default_values = [
-        '', 'chat_choices', '', '', '', [], '', '', None, {}
+        '', 'chat_choices', '', '', [], '', '', None, {}
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -82,9 +82,9 @@ def create_bartender_data():
         "Home Tinkerer" : "Relaxed and enthusiastic"
         }
     seed_dict = {
-        "Mixologist": "M",
-        "Efficient" : "E",
-        "Home Tinkerer" : "H"
+        "Mixologist": "Spooky",
+        "Efficient" : "Mittens",
+        "Home Tinkerer" : "Bandit"
     }
 
 # Define a function to get the user's choice of bartender style and attitude and whether or not they are querying a recipe
@@ -93,13 +93,14 @@ def get_chat_choices():
     # Create a selectbox to allow the user to choose a bartender style
     st.subheader("Choose a bartender style")
     bartender_style = st.selectbox(
-        "Choose a bartender style",
+            "Select the type of bartender you want to chat with.  Each type of bartender has a different style and attitude, so you can\
+            choose the one that best fits your needs.",
         ("Mixologist", "Efficient", "Home Tinkerer")
     )
     # If there is as recipe in the session state, give the user the option to ask a follow up question or continue with general conversation
     # If there is not a recipe in session state, note that the user has not created a recipe yet and then allow them to continue with general conversation
     if st.session_state.recipe != '':
-        st.markdown("You have created a recipe.  Would you like to ask a follow up question about it or continue with general conversation?")
+        st.success("**You have created a recipe.  Would you like to ask a follow up question about it or continue with general conversation?**")
         # Create a selectbox to allow the user to choose whether or not they want to ask a follow up question about the recipe or just continue with general conversation
         chat_choice_question = st.selectbox(
             "Choose whether or not you want to ask a follow up question about your recipe or just continue with general conversation",
@@ -110,9 +111,13 @@ def get_chat_choices():
         elif chat_choice_question == "General Conversation":
             st.session_state.chat_choice = 'general_chat'
     else:
-        st.markdown('You have not created a recipe yet.  If you want to create a recipe first to chat about, click "Create Cocktails" from the sidebar.\
-                    Otherswise you can continue with general conversation.')
+        st.warning('**You have not created a recipe yet.  If you want to create a recipe first to chat about, click "Create a Cocktail" below.\
+                    Otherwise you can continue with general bar questions by clicking the "Start Conversation" button.**')
         st.session_state.chat_choice = 'general_chat'
+        # Create a button to allow the user to create a recipe
+        create_recipe_button = st.button("Create a Cocktail", type = 'primary', use_container_width=True)
+        if create_recipe_button:
+            switch_page("Create Cocktails")
     
     start_conversation_button = st.button("Start Conversation", type = 'primary', use_container_width=True)
     if start_conversation_button:
@@ -132,11 +137,11 @@ def get_chat_choices():
 
 # Define the function to answer any follow up questions the user has about the recipe
 def get_recipe_bartender_response(question, recipe):
-    
+    # Check to see if there is an inventory in the session state
     messages = [
     {
         "role": "system",
-        "content": f"You are a master mixologist who has provided a recipe for the user about which they would like to ask some follow up questions.  The conversation\
+        "content": f"You are a master mixologist who has provided a recipe {recipe} for the user about which they would like to ask some follow up questions.  The conversation\
             you have had so far is {st.session_state.history.messages}.  Please respond as a friendly bartender with {st.session_state.style}\
             and a {st.session_state.attitude} attitude who is happy to answer the user's questions thoroughly."
                 

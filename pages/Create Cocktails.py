@@ -3,8 +3,9 @@
 # Import libraries
 import streamlit as st
 from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
-from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe
+from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
+from PIL import Image
 
 # Initialize the session state
 def init_cocktail_session_variables():
@@ -26,29 +27,45 @@ def reset_pages():
     st.session_state.bar_chat_page = "chat_choices"
     st.session_state.inventory_page = "upload_inventory"
 
+
+# A function to load in the CSS
+def load_css(file_name: str):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 # Initialize the session variables
 init_cocktail_session_variables()
 reset_pages()
+load_css('style.css')
+
 
 
 
 # Define the function to get the information about the cocktail
 def get_cocktail_type():
     # Set the page title
-    st.title('Create Cocktails')
-    st.markdown('##### Use this page to create a cocktail recipe to help you use up your excess liquor inventory! 🍸🍹')
+  
     # Give the user the option to upload a menu or menus for the model to reference when creating the cocktails
-    st.success(f'**If you would like to upload your existing food menu, cocktail menu, or both, please do so by clicking below.\
-               This can be useful if you want to create a cocktail that fits in well with the overall theme of the menu and is\
-                not similar to any of the other cocktails on the menu, if any.  You can also upload your current inventory\
-                for further contextual recipe creation.  Otherwise click "Proceed to Cocktail Creation" to get started!"**')
-    upload_menus_button = st.button('Upload your menu(s)')
-    if upload_menus_button:
-        switch_page('Upload Menus')
-    upload_inventory_button = st.button('Upload your inventory')
-    if upload_inventory_button:
-        switch_page('Upload Inventory')
-    proceed_without_menu_button = st.button('Proceed to Cocktail Creation')
+    st.markdown('''<div style="text-align: center;">
+    <h2 style = "color: black;">Welcome to the Cocktail Creator!</h2>
+    <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
+    be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
+    </div>''', unsafe_allow_html=True)
+    # Create two columns -- one for the upload menu image and button, and one for the upload inventory image and button
+    col1, col2 = st.columns(2, gap="large")
+    with col1:
+        menu_image = Image.open('resources/bar_menu.png')
+        st.image(menu_image, use_column_width=True)
+        upload_menus_button = st.button('Upload your menu(s)', use_container_width=True, type = 'secondary')
+        if upload_menus_button:
+            switch_page('Upload Menus')
+    with col2:
+        inventory_image = Image.open('resources/inventory_image.png')
+        st.image(inventory_image, use_column_width=True)
+        upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'secondary')
+        if upload_inventory_button:
+            switch_page('Upload Inventory')
+    proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
     if proceed_without_menu_button:
         st.session_state.cocktail_page = 'get_cocktail_info'
         st.experimental_rerun()
@@ -62,12 +79,12 @@ def get_cocktail_info():
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
     cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
     # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
-    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['American',\
+    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'American',\
                             'Mexican', 'Italian', 'French', 'Chinese', 'Japanese', 'Thai', 'Indian', 'Greek', 'Spanish', 'Korean', 'Vietnamese',\
                             'Mediterranean', 'Middle Eastern', 'Caribbean', 'British', 'German', 'Irish', 'African', 'Moroccan', 'Nordic', 'Eastern European',\
                             'Jewish', 'South American', 'Central American', 'Australian', 'New Zealand', 'Pacific Islands', 'Canadian', 'Other'])
     # Allow the user to enter a theme for the cocktail if they want
-    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)')
+    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
 
     # Create the submit button
     cocktail_submit_button = st.button(label='Create your cocktail!')
@@ -97,10 +114,39 @@ def get_menu_cocktail_info():
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
+# Create a function to get info for a cocktail that takes into account the user's inventory
+def get_inventory_cocktail_info():
+    st.markdown('''<div style="text-align: center;">
+    <h5 style = "color: black;">Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
+        when creating your cocktail.</h5>
+        </div>''', unsafe_allow_html=True)
+    # Build the form 
+    # Display the user's inventory
+    st.write('Here is your current inventory:')
+    st.write(st.session_state.inventory_list)
+    # Start by getting the input for the liquor that the user is trying to use up
+    liquor = st.text_input('What liquor are you trying to use up?')
+    # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
+    cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
+    # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
+    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'American',\
+                            'Mexican', 'Italian', 'French', 'Chinese', 'Japanese', 'Thai', 'Indian', 'Greek', 'Spanish', 'Korean', 'Vietnamese',\
+                            'Mediterranean', 'Middle Eastern', 'Caribbean', 'British', 'German', 'Irish', 'African', 'Moroccan', 'Nordic', 'Eastern European',\
+                            'Jewish', 'South American', 'Central American', 'Australian', 'New Zealand', 'Pacific Islands', 'Canadian', 'Other'])
+    # Allow the user to enter a theme for the cocktail if they want
+    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
+
+    # Create the submit button
+    cocktail_submit_button = st.button(label='Create your cocktail!')
+    if cocktail_submit_button:
+        with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
+            get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            st.session_state.cocktail_page = "display_recipe"
+            st.experimental_rerun()
+
 
 def display_recipe():
     st.markdown('##### Here is your recipe! 🍸🍹')
-    st.write(st.session_state.recipe_text)
     # Display the recipe name
     st.markdown(f'**{st.session_state["cocktail_name"]}**')
     # Display the recipe ingredients
@@ -125,12 +171,13 @@ def display_recipe():
     st.markdown(download_link, unsafe_allow_html=True)
 
     # Create an option to chat about the recipe
-    chat_button = st.button('Chat with a bartender about this recipe?')
+    chat_button = st.button('Chat with a bartender about this recipe?', type = 'primary', use_container_width=True)
     if chat_button:
+        st.session_state.bar_chat_page = "recipe_chat"
         switch_page('Cocktail Chat')
    
     # Create a "Create another cocktail" button
-    create_another_cocktail_button = st.button('Create another cocktail!')
+    create_another_cocktail_button = st.button('Create another cocktail!', type = 'primary', use_container_width=True)
     if create_another_cocktail_button:
         st.session_state.cocktail_page = "get_cocktail_info"
         st.experimental_rerun()
@@ -141,5 +188,7 @@ elif st.session_state.cocktail_page == "get_cocktail_info":
     get_cocktail_info()
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
     get_menu_cocktail_info()
+elif st.session_state.cocktail_page == "get_inventory_cocktail_info":
+    get_inventory_cocktail_info()
 elif st.session_state.cocktail_page == "display_recipe":
     display_recipe()
