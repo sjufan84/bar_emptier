@@ -2,7 +2,7 @@
 
 # Import libraries
 import streamlit as st
-from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
+# from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
 from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
 import asyncio
@@ -186,14 +186,14 @@ def display_recipe():
         <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
         </div>''', unsafe_allow_html=True)
         # Save the selected recipe as a PDF
-        pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
+        # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
 
         # Generate a download link for the saved PDF
-        download_link = get_recipe_pdf_download_link(pdf_path, f"{st.session_state.cocktail_name}.pdf")
+        # download_link = get_recipe_pdf_download_link(pdf_path, f"{st.session_state.cocktail_name}.pdf")
 
         # Display the download link in a centered div
-        st.markdown(f'''<div style="text-align: center;">
-        <p>{download_link}</p>''', unsafe_allow_html=True)
+        # st.markdown(f'''<div style="text-align: center;">
+        # <p>{download_link}</p>''', unsafe_allow_html=True)
 
         # Create an option to chat about the recipe
         chat_button = st.button('Chat with a bartender about this recipe?', type = 'primary', use_container_width=True)

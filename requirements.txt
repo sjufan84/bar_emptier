@@ -2,7 +2,6 @@ pandas
 streamlit
 openai
 python-dotenv
-reportlab
 streamlit_extras
 streamlit-chat
 langchain
