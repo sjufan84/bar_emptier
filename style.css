@@ -11,11 +11,11 @@ body {
   
   /* Header and markdown elements */
   h1, h2, h3, h4, h5, h6 {
-    color: #4a90e2;
+    color: #323248;
   }
   
   p, ul, ol {
-    color: #323248;
+    color: #4a90e2;
   }
   
   a {
