@@ -49,7 +49,7 @@ async def upload_inventory():
     ''', unsafe_allow_html=True)
     # Create a file uploader
     uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx', 'xls'])
-    upload_file_button = st.button('Upload File and Continue to Cocktail Creation', use_container_width=True, type = 'primary')
+    upload_file_button = st.button('Upload File and Continue to Cocktail Creation', use_container_width=True, type = 'secondary')
     # If the user clicks the upload file button, process the file
     if upload_file_button:
         with st.spinner('Converting and formatting your file...'):

@@ -58,7 +58,13 @@ def get_cocktail_type():
         <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
         be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
         </div>''', unsafe_allow_html=True)
+        proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'secondary')
+        if proceed_without_menu_button:
+            st.session_state.cocktail_page = 'get_cocktail_info'
+            st.experimental_rerun()
+        
         st.markdown('<hr>', unsafe_allow_html=True)
+
         # Create two columns -- one for the upload menu image and button, and one for the upload inventory image and button
         col1, col2 = st.columns(2, gap="large")
         with col1:
@@ -73,10 +79,7 @@ def get_cocktail_type():
             upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'secondary')
             if upload_inventory_button:
                 switch_page('Upload Inventory')
-        proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
-        if proceed_without_menu_button:
-            st.session_state.cocktail_page = 'get_cocktail_info'
-            st.experimental_rerun()
+        
 
 async def get_cocktail_info():
 
