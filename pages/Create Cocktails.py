@@ -174,6 +174,8 @@ def display_recipe():
     # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
+        # Display the recipe name
+        st.markdown(f'**Recipe Name:  ** {st.session_state["cocktail_name"]}')
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
         for ingredient in st.session_state['ingredients']:
