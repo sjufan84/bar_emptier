@@ -35,10 +35,7 @@ def upload_menus():
                 The text can be extracted from pictures of menus as long as the picture is clear enough and well lit.**')
     # Create a space in between the header and the uploaders
     st.text('')
-    st.warning('*Please note: if uploading a picture of a menu or menus, we use Google Vision to extract the text and then\
-               reformat it to be more readable for the model.  You will have the chance to edit the resulting menu after\
-               it is generated.  By default we do not reformat the menus pulled from text or pdf as they are generally\
-               easy to interpret for cocktail creation purposes.*')
+    
     
     # We will create two separate uploaders, one for food menus and one for drink menus as well as two text areas (one for food and one for drink)
     # The user can upload a menu or paste the text of a menu into the text area
@@ -55,6 +52,12 @@ def upload_menus():
 
     # Create a button to submit the menus
     submit_menus_button = st.button("Submit Menus")
+
+    # Warning about using Google Vision to extract text from menus
+    st.warning('*Please note: if uploading a picture of a menu or menus, we use Google Vision to extract the text and then\
+               reformat it to be more readable for the model.  You will have the chance to edit the resulting menu after\
+               it is generated.  By default we do not reformat the menus pulled from text or pdf as they are generally\
+               easy to interpret for cocktail creation purposes.*')
     
     if submit_menus_button:
         # If there is not a food menu or drink menu, display a warning

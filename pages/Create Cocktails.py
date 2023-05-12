@@ -8,6 +8,7 @@ from streamlit_extras.switch_page_button import switch_page
 import asyncio
 from utils.image_utils import generate_image
 from PIL import Image
+import pandas as pd
 
 # Initialize the session state
 def init_cocktail_session_variables():
@@ -129,10 +130,8 @@ def get_inventory_cocktail_info():
     <h5 style = "color: black;">Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
         when creating your cocktail.</h5>
         </div>''', unsafe_allow_html=True)
-    # Build the form 
-    # Display the user's inventory
-    st.write('Here is your current inventory:')
-    st.write(st.session_state.inventory_list)
+  
+    # Build the form
     # Start by getting the input for the liquor that the user is trying to use up
     liquor = st.text_input('What liquor are you trying to use up?')
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
@@ -152,6 +151,17 @@ def get_inventory_cocktail_info():
             get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
+
+    st.markdown('---')
+    # Build the form 
+    # Display the user's inventory
+    st.write('Here is your current inventory:')
+    # Create a dataframe from the inventory list
+    inventory_df = pd.DataFrame(st.session_state.inventory_list, columns=['Ingredient', 'Quantity'])
+    # Set the index to the ingredient name
+    inventory_df.set_index('Ingredient', inplace=True)
+    # Display the dataframe
+    st.dataframe(inventory_df, use_container_width=True)
 
 
 def display_recipe():
