@@ -29,7 +29,6 @@ body {
   
   /* Streamlit widgets */
   .stTextInput input {
-    color: "black";
     border: 1px solid #4a90e2;
   }
   
@@ -52,14 +51,14 @@ body {
   }
   
   .stNumberInput>div>input {
-    background-color: #303030;
-    color: #ffffff;
+    background-color: #ffffff;
+    color: #4a90e2;
     border: 1px solid #4a90e2;
   }
   
   .stDatePicker>div>input {
-    background-color: #303030;
-    color: #ffffff;
+    background-color: #ffffff;
+    color: #4a90e2;
     border: 1px solid #4a90e2;
   }
   

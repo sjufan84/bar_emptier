@@ -1,107 +1,107 @@
-liquor,amount_in_oz
-Absinthe,991
-Agave Nectar,92
-Akvavit,327
-Almond Liqueur,876
-Amaretto,902
-Aperol,499
-Apple Brandy,755
-Applejack,285
-Apricot Brandy,114
-Averna,442
-Bailey's Irish Cream,694
-Bénédictine,519
-Bitters,668
-Black Sambuca,298
-Blue Curaçao,169
-Bourbon,146
-Brandy,789
-Campari,166
-Chambord,185
-Cherry Brandy,385
-Cider,733
-Cinnamon Schnapps,381
-Cocchi Americano,728
-Cognac,527
-Cointreau,453
-Crème de Cacao,738
-Crème de Cassis,635
-Crème de Menthe,838
-Crème de Violette,644
-Curacao,464
-Drambuie,832
-Dry Vermouth,748
-Elderflower Liqueur,327
-Falernum,161
-Fernet Branca,242
-Galliano,774
-Genever,935
-Gin,9
-Gold Rum,835
-Goldschläger,846
-Grand Marnier,250
-Grapefruit Liqueur,696
-Green Chartreuse,32
-Grenadine,87
-Hazelnut Liqueur,91
-Hpnotiq,906
-Irish Cream,99
-Jägermeister,74
-Kahlua,34
-Lemon Juice,436
-Lemoncello,650
-Lillet,312
-Lime Juice,648
-Maraschino Liqueur,544
-Mezcal,199
-Midori,601
-Mint Leaves,378
-Nutmeg,766
-Orange Bitters,689
-Orange Curacao,316
-Orange Flower Water,353
-Orange Juice,807
-Orgeat Syrup,824
-Overproof Rum,704
-Peach Bitters,633
-Peach Liqueur,421
-Peppermint Schnapps,559
-Pernod,58
-Peychaud's Bitters,321
-Pimm's No. 1,459
-Pineapple Juice,905
-Port,186
-Prosecco,870
-Pumpkin Liqueur,25
-Raspberry Liqueur,776
-Red Wine,307
-Rhum Agricole,231
-Rose Water,730
-Rum,997
-Rye Whiskey,294
-Sake,495
-Sambuca,54
-Scotch,891
-Sherry,945
-Simple Syrup,787
-Sloe Gin,72
-Smoked Paprika,765
-Southern Comfort,217
-Sparkling Wine,148
-Spiced Rum,521
-St. Germain,141
-Strawberry Liqueur,64
-Sweet and Sour Mix,380
-Sweet Vermouth,694
-Tabasco Sauce,846
-Tequila,46
-Tomato Juice,536
-Triple Sec,311
-Vanilla Liqueur,190
-Vanilla Syrup,431
-Vermouth,81
-Vodka,893
-Whiskey,292
-White Rum,631
-White Wine,352
-Yellow Chartreuse,181
+liquor,amount_in_liters,cost_per_liter
+Absinthe,991,77.64
+Agave Nectar,92,78.7
+Akvavit,327,13.37
+Almond Liqueur,876,78.01
+Amaretto,902,17.09
+Aperol,499,30.82
+Apple Brandy,755,25.24
+Applejack,285,69.25
+Apricot Brandy,114,22.22
+Averna,442,13.54
+Bailey's Irish Cream,694,88.28
+Bénédictine,519,15.16
+Bitters,668,47.63
+Black Sambuca,298,21.84
+Blue Curaçao,169,48.32
+Bourbon,146,54.4
+Brandy,789,42.69
+Campari,166,11.5
+Chambord,185,93.62
+Cherry Brandy,385,66.38
+Cider,733,85.06
+Cinnamon Schnapps,381,66.78
+Cocchi Americano,728,27.8
+Cognac,527,98.12
+Cointreau,453,84.92
+Crème de Cacao,738,32.7
+Crème de Cassis,635,68.51
+Crème de Menthe,838,72.19
+Crème de Violette,644,32.14
+Curacao,464,44.3
+Drambuie,832,68.13
+Dry Vermouth,748,44.15
+Elderflower Liqueur,327,75.62
+Falernum,161,48.45
+Fernet Branca,242,31.03
+Galliano,774,63.42
+Genever,935,18.3
+Gin,9,13.53
+Gold Rum,835,80.37
+Goldschläger,846,14.31
+Grand Marnier,250,64.11
+Grapefruit Liqueur,696,15.21
+Green Chartreuse,32,93.87
+Grenadine,87,52.04
+Hazelnut Liqueur,91,97.48
+Hpnotiq,906,71.32
+Irish Cream,99,20.85
+Jägermeister,74,55.05
+Kahlua,34,88.94
+Lemon Juice,436,15.43
+Lemoncello,650,63.57
+Lillet,312,15.42
+Lime Juice,648,51.16
+Maraschino Liqueur,544,60.41
+Mezcal,199,34.43
+Midori,601,20.88
+Mint Leaves,378,64.24
+Nutmeg,766,67.36
+Orange Bitters,689,46.45
+Orange Curacao,316,21.0
+Orange Flower Water,353,77.13
+Orange Juice,807,91.5
+Orgeat Syrup,824,89.99
+Overproof Rum,704,82.98
+Peach Bitters,633,79.01
+Peach Liqueur,421,90.27
+Peppermint Schnapps,559,65.1
+Pernod,58,97.15
+Peychaud's Bitters,321,65.77
+Pimm's No. 1,459,85.87
+Pineapple Juice,905,39.26
+Port,186,24.13
+Prosecco,870,97.61
+Pumpkin Liqueur,25,42.6
+Raspberry Liqueur,776,66.13
+Red Wine,307,87.42
+Rhum Agricole,231,30.04
+Rose Water,730,10.81
+Rum,997,80.44
+Rye Whiskey,294,83.67
+Sake,495,57.69
+Sambuca,54,36.05
+Scotch,891,52.71
+Sherry,945,13.84
+Simple Syrup,787,94.31
+Sloe Gin,72,21.39
+Smoked Paprika,765,73.97
+Southern Comfort,217,24.32
+Sparkling Wine,148,42.63
+Spiced Rum,521,86.08
+St. Germain,141,18.24
+Strawberry Liqueur,64,57.02
+Sweet and Sour Mix,380,89.34
+Sweet Vermouth,694,30.32
+Tabasco Sauce,846,39.02
+Tequila,46,83.15
+Tomato Juice,536,82.75
+Triple Sec,311,99.67
+Vanilla Liqueur,190,87.52
+Vanilla Syrup,431,58.83
+Vermouth,81,62.22
+Vodka,893,61.57
+Whiskey,292,94.34
+White Rum,631,56.93
+White Wine,352,66.58
+Yellow Chartreuse,181,89.36

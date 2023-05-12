@@ -63,8 +63,6 @@ def get_cocktail_type():
             st.session_state.cocktail_page = 'get_cocktail_info'
             st.experimental_rerun()
         
-        st.markdown('<hr>', unsafe_allow_html=True)
-
         # Create two columns -- one for the upload menu image and button, and one for the upload inventory image and button
         col1, col2 = st.columns(2, gap="large")
         with col1:
