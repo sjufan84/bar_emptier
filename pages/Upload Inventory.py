@@ -15,10 +15,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
-# A function to load in the CSS
-def load_css(file_name: str):
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
 
 # Initialize the session state
 def init_inventory_session_variables():
@@ -34,7 +31,6 @@ def init_inventory_session_variables():
         if var not in st.session_state:
             st.session_state[var] = default_value
 
-load_css("style.css")
 init_inventory_session_variables()
 
 async def upload_inventory():

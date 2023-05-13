@@ -31,15 +31,9 @@ def reset_pages():
     st.session_state.inventory_page = "upload_inventory"
 
 
-# A function to load in the CSS
-def load_css(file_name: str):
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
 # Initialize the session variables
 init_cocktail_session_variables()
 reset_pages()
-load_css('style.css')
 
 
 
@@ -58,7 +52,7 @@ def get_cocktail_type():
         <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
         be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
         </div>''', unsafe_allow_html=True)
-        proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'secondary')
+        proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
         if proceed_without_menu_button:
             st.session_state.cocktail_page = 'get_cocktail_info'
             st.experimental_rerun()
@@ -68,13 +62,13 @@ def get_cocktail_type():
         with col1:
             menu_image = Image.open('resources/bar_menu.png')
             st.image(menu_image, use_column_width=True)
-            upload_menus_button = st.button('Upload your menu(s)', use_container_width=True, type = 'secondary')
+            upload_menus_button = st.button('Upload your menu(s)', use_container_width=True, type = 'primary')
             if upload_menus_button:
                 switch_page('Upload Menus')
         with col2:
             inventory_image = Image.open('resources/inventory_image.png')
             st.image(inventory_image, use_column_width=True)
-            upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'secondary')
+            upload_inventory_button = st.button('Upload your inventory', use_container_width=True, type = 'primary')
             if upload_inventory_button:
                 switch_page('Upload Inventory')
         

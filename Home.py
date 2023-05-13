@@ -4,10 +4,6 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
 
-# A function to load in the CSS
-def load_css(file_name: str):
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Initialize the session state
 def init_session_variables():
@@ -33,7 +29,6 @@ def reset_pages():
 # Initialize the session variables
 init_session_variables()
 reset_pages()
-load_css('style.css')
 
 # Create the title using the title class
 # This is a custom class that I created in the style.css file
