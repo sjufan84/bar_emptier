@@ -148,7 +148,7 @@ def get_recipe_bartender_response(question, recipe):
     },
     {
         "role": "user",
-        "content": f"Thanks for the recipe!  I need to ask you a follow up question {question}.  Do you mind answering it for me?"
+        "content": f"Thanks for the recipe!  I need to ask you a follow up question {question}."
     },
    
     ]

@@ -38,7 +38,7 @@ async def upload_inventory():
     st.markdown('''
     <div style = text-align:center>
     <h3 style = "color: black;">Upload your inventory</h3>
-    <h5 style = "color: black;">The first column of your file should contain the name of the spirit\
+    <h5 style = "color: #7b3583;">The first column of your file should contain the name of the spirit\
         and the second column should contain the quantity of that spirit that you have in stock.\
         By uploading your inventory, you are allowing the model to prioritize using up ingredients you already have on hand when suggesting cocktails.</h5>
     </div>

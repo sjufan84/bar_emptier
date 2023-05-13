@@ -94,8 +94,6 @@ async def get_cocktail_info():
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
             await get_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = await generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
@@ -159,7 +157,7 @@ def get_inventory_cocktail_info():
     st.dataframe(inventory_df, use_container_width=True)
 
 
-def display_recipe():
+async def display_recipe():
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h2 style = "color: black;">Here's your recipe!</h1>
@@ -169,7 +167,7 @@ def display_recipe():
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
         # Display the recipe name
-        st.markdown(f'**Recipe Name:  ** {st.session_state["cocktail_name"]}')
+        st.markdown(f'**Recipe Name:** {st.session_state["cocktail_name"]}')
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
         for ingredient in st.session_state['ingredients']:
@@ -184,16 +182,20 @@ def display_recipe():
         st.markdown(f'**Glass:**  {st.session_state.glass}')
     with col2:
         # Display the recipe name
-        st.markdown(f'<div style="text-align: center;"><b>Recipe Name:  </b>{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center;">{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
         st.text("")
-        # Display the recipe image
-        st.image(st.session_state.image['output_url'], use_column_width=True)
-        # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
-        st.markdown('''<div style="text-align: center;">
-        <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
-        </div>''', unsafe_allow_html=True)
-        # Save the selected recipe as a PDF
-        # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
+        with st.spinner("Creating cocktail image..."):
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = await generate_image(image_prompt)
+            # Display the recipe image
+            st.image(st.session_state.image['output_url'], use_column_width=True)
+            # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
+            st.markdown('''<div style="text-align: center;">
+            <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
+            </div>''', unsafe_allow_html=True)
+            st.warning('**Note:** The actual cocktail may not look exactly like this!')
+            # Save the selected recipe as a PDF
+            # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
 
         # Generate a download link for the saved PDF
         # download_link = get_recipe_pdf_download_link(pdf_path, f"{st.session_state.cocktail_name}.pdf")
@@ -223,4 +225,4 @@ elif st.session_state.cocktail_page == "get_menu_cocktail_info":
 elif st.session_state.cocktail_page == "get_inventory_cocktail_info":
     get_inventory_cocktail_info()
 elif st.session_state.cocktail_page == "display_recipe":
-    display_recipe()
+    asyncio.run(display_recipe())

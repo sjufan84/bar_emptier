@@ -21,25 +21,38 @@ def init_image_generator_session_variables():
 
 # Define a function to allow the user to specify the image to generate
 def get_image():
-    # Tell the user by default, the name of the recipe is used to generate a recipe
-    st.markdown("**By default, the name of the recipe is used to generate an image.**")
-    # Create a text box to allow the user to specify the prompt for the image generator if they would rather use
-    # something else besides the recipe name
-    st.markdown("**If you would like to use something else, enter it below:**")
-    image_prompt = st.text_input("Image Prompt", value=st.session_state.cocktail_name)
-    # Create a button to generate the image
-    generate_image_button = st.button("Generate Image")
-    if generate_image_button:
-        with st.spinner("Generating image..."):
-            if image_prompt != '':
-                st.session_state.image_prompt = image_prompt
-            else:
-                st.session_state.image_prompt = st.session_state.cocktail_name
-
-            st.session_state.image = generate_image(st.session_state.image_prompt)
-            st.session_state.images_dict[st.session_state.cocktail_name] = st.session_state.image
-            st.session_state.image_page = 'display_image'
+    # If there is no recipe in the session state, tell the user to go to the create cocktails page
+    if "cocktail_name" not in st.session_state or st.session_state.cocktail_name == '':
+        st.markdown('''
+                    <h4 style = "color: black; text-align: center;">You haven't created any cocktails yet!  Click the button below to start.</h2>
+                    ''', unsafe_allow_html=True)
+        # Create a button to go to the create cocktails page
+        create_cocktail_button = st.button("Create a Cocktail", use_container_width=True, type = 'primary')
+        if create_cocktail_button:
+            st.session_state.cocktail_page = "get_cocktail_type"
+            switch_page('Create Cocktails')
             st.experimental_rerun()
+    else:
+       #  Tell the user by default, the name of the recipe is used to generate a recipe
+        st.markdown("**By default, the name of the recipe is used to generate an image.**")
+
+        # Create a text box to allow the user to specify the prompt for the image generator if they would rather use
+        # something else besides the recipe name
+        st.markdown("**If you would like to use something else, enter it below:**")
+        image_prompt = st.text_input("Image Prompt", value=st.session_state.cocktail_name)
+        # Create a button to generate the image
+        generate_image_button = st.button("Generate Image")
+        if generate_image_button:
+            with st.spinner("Generating image..."):
+                if image_prompt != '':
+                    st.session_state.image_prompt = image_prompt
+                else:
+                    st.session_state.image_prompt = st.session_state.cocktail_name
+
+                st.session_state.image = generate_image(st.session_state.image_prompt)
+                st.session_state.images_dict[st.session_state.cocktail_name] = st.session_state.image
+                st.session_state.image_page = 'display_image'
+                st.experimental_rerun()
 
 # Define a function to display the image
 def display_image():
