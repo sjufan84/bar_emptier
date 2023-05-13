@@ -180,6 +180,8 @@ async def display_recipe():
         st.markdown(f'**Garnish:**  {st.session_state.garnish}')
         # Display the recipe glass
         st.markdown(f'**Glass:**  {st.session_state.glass}')
+        # Display the flavor profile
+        st.markdown(f'**Flavor Profile:**  {st.session_state.flavor_profile}')
     with col2:
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)

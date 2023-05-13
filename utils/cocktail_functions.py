@@ -40,6 +40,8 @@ if "garnish" not in st.session_state:
     st.session_state.garnish = ""
 if "glass" not in st.session_state:
     st.session_state.glass = ""
+if "flavor_profile" not in st.session_state:
+    st.session_state.flavor_profile = ""
 
 
 # We want to create a parser object to parse the recipe into the variables we want using Pydantic
@@ -49,6 +51,7 @@ class CocktailRecipe(BaseModel):
     instructions: List[str] = Field(description="Instructions for preparing the cocktail")
     garnish: str = Field(description="Garnish for the cocktail")
     glass: str = Field(description="Glass to serve the cocktail in")
+    flavor_profile: str = Field(description="Flavor profile of the cocktail")
 
 # Instantiate the parser object
 parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
@@ -133,6 +136,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
         st.session_state.instructions = parsed_recipe.instructions
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
+        st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
@@ -152,6 +156,13 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             st.session_state.response = response
             parsed_recipe = parser.parse(recipe)
             st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+            st.session_state.parsed_recipe = parsed_recipe
+            st.session_state.cocktail_name = parsed_recipe.name
+            st.session_state.ingredients = parsed_recipe.ingredients
+            st.session_state.instructions = parsed_recipe.instructions
+            st.session_state.garnish = parsed_recipe.garnish
+            st.session_state.glass = parsed_recipe.glass
+            st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
 
 
@@ -178,6 +189,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
         st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+        st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
             
 
@@ -226,6 +238,7 @@ async def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
         st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+        st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
 
 
@@ -252,6 +265,7 @@ async def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
         st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+        st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
 
     # Return the recipe
@@ -300,6 +314,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         st.session_state.instructions = parsed_recipe.instructions
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
+        st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
@@ -325,6 +340,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             st.session_state.instructions = parsed_recipe.instructions
             st.session_state.garnish = parsed_recipe.garnish
             st.session_state.glass = parsed_recipe.glass
+            st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
 
 
@@ -351,6 +367,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             st.session_state.garnish = parsed_recipe.garnish
             st.session_state.glass = parsed_recipe.glass
             st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+            st.session_state.flavor_profile = parsed_recipe.flavor_profile
 
             
 
