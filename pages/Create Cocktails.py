@@ -5,8 +5,8 @@ import streamlit as st
 # from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
 from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
-import asyncio
 from utils.image_utils import generate_image
+import asyncio
 from PIL import Image
 import pandas as pd
 
@@ -14,10 +14,10 @@ import pandas as pd
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name'
     ]
     default_values = [
-        'get_cocktail_type', '', '', '', None, []
+        'get_cocktail_type', '', '', '', None, [], ''
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -94,10 +94,12 @@ async def get_cocktail_info():
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
             await get_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
-def get_menu_cocktail_info():
+async def get_menu_cocktail_info():
 
     # Build the form 
 
@@ -113,12 +115,14 @@ def get_menu_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_menu_cocktail_recipe(liquor, cocktail_type, theme)
+            await get_menu_cocktail_recipe(liquor, cocktail_type, theme)
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
 # Create a function to get info for a cocktail that takes into account the user's inventory
-def get_inventory_cocktail_info():
+async def get_inventory_cocktail_info():
     st.markdown('''<div style="text-align: center;">
     <h5 style = "color: black;">Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
         when creating your cocktail.</h5>
@@ -141,7 +145,9 @@ def get_inventory_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            await get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
@@ -157,7 +163,7 @@ def get_inventory_cocktail_info():
     st.dataframe(inventory_df, use_container_width=True)
 
 
-async def display_recipe():
+def display_recipe():
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h2 style = "color: black;">Here's your recipe!</h1>
@@ -186,17 +192,14 @@ async def display_recipe():
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
         st.text("")
-        with st.spinner("Creating cocktail image..."):
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = await generate_image(image_prompt)
-            # Display the recipe image
-            st.image(st.session_state.image['output_url'], use_column_width=True)
-            # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
-            st.markdown('''<div style="text-align: center;">
-            <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
-            </div>''', unsafe_allow_html=True)
-            st.warning('**Note:** The actual cocktail may not look exactly like this!')
-            # Save the selected recipe as a PDF
+        # Display the recipe image
+        st.image(st.session_state.image['output_url'], use_column_width=True)
+        # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
+        st.markdown('''<div style="text-align: center;">
+        <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
+        </div>''', unsafe_allow_html=True)
+        st.warning('**Note:** The actual cocktail may not look exactly like this!')
+        # Save the selected recipe as a PDF
             # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
 
         # Generate a download link for the saved PDF
@@ -223,8 +226,8 @@ if st.session_state.cocktail_page == "get_cocktail_type":
 elif st.session_state.cocktail_page == "get_cocktail_info":
     asyncio.run(get_cocktail_info())
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
-    get_menu_cocktail_info()
+    asyncio.run(get_menu_cocktail_info())
 elif st.session_state.cocktail_page == "get_inventory_cocktail_info":
-    get_inventory_cocktail_info()
+    asyncio.run(get_inventory_cocktail_info())
 elif st.session_state.cocktail_page == "display_recipe":
-    asyncio.run(display_recipe())
+    display_recipe()

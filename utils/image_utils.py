@@ -10,7 +10,7 @@ import requests
 api_key = os.getenv("STABLE_DIFFUSION_API_KEY")
 
 # Define a function to generate an image for a recipe
-async def generate_image(image_prompt):
+def generate_image(image_prompt):
     r = requests.post(
         "https://api.deepai.org/api/stable-diffusion",
 
