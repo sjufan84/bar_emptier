@@ -17,7 +17,7 @@ def init_cocktail_session_variables():
         'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name'
     ]
     default_values = [
-        'get_cocktail_type', '', '', '', None, [], ''
+        'get_cocktail_info', '', '', '', None, [], ''
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -210,13 +210,13 @@ def display_recipe():
         # <p>{download_link}</p>''', unsafe_allow_html=True)
 
         # Create an option to chat about the recipe
-        chat_button = st.button('Chat with a bartender about this recipe?', type = 'primary', use_container_width=True)
+        chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
         if chat_button:
             st.session_state.bar_chat_page = "recipe_chat"
             switch_page('Cocktail Chat')
     
         # Create a "Create another cocktail" button
-        create_another_cocktail_button = st.button('Create another cocktail!', type = 'primary', use_container_width=True)
+        create_another_cocktail_button = st.button('Create another cocktail', type = 'primary', use_container_width=True)
         if create_another_cocktail_button:
             st.session_state.cocktail_page = "get_cocktail_info"
             st.experimental_rerun()

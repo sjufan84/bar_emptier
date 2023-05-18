@@ -34,7 +34,7 @@ def setup_api():
 # Define a function to reset the other pages to their default state
 def reset_pages():
     # Make sure that when the user clicks onto this page, the session state of the other pages is reset
-    st.session_state.cocktail_page = 'get_cocktail_type'
+    st.session_state.cocktail_page = 'get_cocktail_info'
     st.session_state.inventory_page = 'upload_inventory'
     st.session_state.menu_page = 'upload_menus'
 
@@ -65,7 +65,7 @@ def follow_up_recipe_chat():
         # Display the initial bartender message
         message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
     # Create a text area for the user to enter their message
-    user_message = st.text_area("What questions do you have about the recipe?", value='', height=150, max_chars=None, key=None)
+    user_message = st.text_area("Ask the bartender anything related to the recipe or just bar questions in general:", value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
     submit_user_follow_up_button = st.button("Submit Follow Up Question", type = 'primary', use_container_width=True)
     # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
@@ -100,6 +100,7 @@ def follow_up_recipe_chat():
         # Reset the chat history and chat history dictionary
         st.session_state.chat_history_dict = {}
         st.session_state.chat_messages = []
+        st.session_state.history = None
         # Return to the recipe creation page
         st.session_state.bar_chat_page = 'get_cocktail_type'
         switch_page("Create Cocktails")
