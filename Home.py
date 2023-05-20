@@ -64,4 +64,6 @@ with col2:
         switch_page('Cocktail Chat')
         st.experimental_rerun()
     
+# Create a message that will allow the user to contact the developer for more information
+st.markdown("<h4 style='text-align: center;'>We want to hear from you!  If you have any feedback to share, or are interested in collaborating on this project, please reach out to us <a href='mailto:dave_thomas@enoughwebapp.com'>here.</a></h3>", unsafe_allow_html=True)
 
