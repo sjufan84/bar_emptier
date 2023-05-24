@@ -1,0 +1,71 @@
+### Generic Training Materials:
+
+**Training Material 1: Customer Service at Restaurant**
+
+In the restaurant business, good customer service is essential to your success. Whether you are running a restaurant or a bar, it's important to know how to handle customers. Make sure to always greet your customers with a smile and be ready to answer any questions they might have about the menu. Remember, the customer's experience should be your top priority.
+
+**Training Material 2: Cocktail Preparation**
+
+To prepare a cocktail, you will need the recipe, the correct ingredients, and the appropriate bar tools. The key to a great cocktail is balance. This means the right amount of spirit, the right amount of sweetness or sourness, and the right amount of bitterness. Remember, practice makes perfect!
+
+### Generic Food Menu:
+
+**Food Menu**
+
+1. Spaghetti Bolognese - Traditional Italian dish with a rich meat sauce served over pasta.
+2. Margherita Pizza - Classic pizza with fresh mozzarella, tomatoes, and basil.
+3. Caesar Salad - Romaine lettuce tossed with croutons, Parmesan cheese, and Caesar dressing.
+4. Chicken Alfredo - Grilled chicken served over pasta in a creamy Alfredo sauce.
+5. Chocolate Lava Cake - Warm chocolate cake with a gooey chocolate center, served with vanilla ice cream.
+
+### Generic Cocktail Menu:
+
+**Cocktail Menu**
+
+1. Old Fashioned - Bourbon, sugar, Angostura bitters, and water, garnished with a cherry and an orange slice.
+2. Margarita - Tequila, triple sec, lime juice, and salt on the rim of the glass.
+3. Mojito - White rum, sugar, lime juice, soda water, and mint.
+4. Martini - Gin and dry vermouth, garnished with an olive or a lemon twist.
+5. Bloody Mary - Vodka, tomato juice, and combinations of other spices, served with celery stalk.
+
+Certainly, I'll add more details and create some more documents to add to the dataset. 
+
+### Extended Training Materials:
+
+**Training Material 3: Wine Knowledge**
+
+Understanding different types of wines is crucial for a restaurant or bar professional. Wines can be classified primarily by the grape variety used to make the wine and the region where the grapes are grown. Wines classified on the basis of grape variety are called varietals and those classified on the basis of region are named after the regions themselves. For example, a "Merlot" is a varietal wine, whereas a "Bordeaux" is a regional wine. 
+
+**Training Material 4: Food Safety and Hygiene**
+
+Food safety is a critical aspect of running a restaurant or bar. Always ensure that the food is stored and prepared at the right temperatures. Remember to always wash your hands before handling food. All kitchen surfaces and equipment should be cleaned and sanitized regularly to prevent foodborne illnesses. 
+
+**Training Material 5: Handling Difficult Customers**
+
+At some point, you will encounter a difficult customer. Stay calm, listen to their complaints, and try to find a solution. Remember, the customer is not attacking you personally; they are upset with the situation. 
+
+**Training Material 6: Bartending Techniques**
+
+Bartending requires mastery of a variety of different techniques. These include stirring, shaking, muddling, straining, and building. Each technique has its own use, and using the correct technique can greatly enhance the quality of a cocktail. For example, cocktails containing clear spirits and no mixers are typically stirred, not shaken.
+
+**Training Material 7: Understanding Dietary Restrictions**
+
+As a restaurant or bar professional, you'll likely encounter customers with a range of dietary restrictions. This can include allergies, religious requirements, or lifestyle choices. For example, some people have serious allergies to nuts, while others may follow a vegetarian or vegan diet. It's important to understand these restrictions and have options available for these customers.
+
+### Extended Food Menu:
+
+6. Vegan Buddha Bowl - Quinoa, chickpeas, avocado, and an array of fresh vegetables served with tahini dressing.
+7. Steak Frites - Juicy, grilled steak served with a side of crispy fries.
+8. Fish and Chips - Beer-battered fish served with chips, tartare sauce, and a slice of lemon.
+9. Vegetable Stir Fry - A variety of fresh vegetables stir-fried in a savory sauce, served with jasmine rice.
+10. New York Cheesecake - Creamy cheesecake with a graham cracker crust, topped with fresh strawberries.
+
+### Extended Cocktail Menu:
+
+6. Negroni - Gin, vermouth rosso, and Campari, garnished with orange peel.
+7. Whiskey Sour - Whiskey, lemon juice, and sugar, garnished with a cherry and an orange slice.
+8. Cosmopolitan - Vodka, triple sec, cranberry juice, and freshly squeezed lime juice.
+9. Pina Colada - Rum, coconut milk, and pineapple juice, usually served with a pineapple wedge and a cherry.
+10. Espresso Martini - Vodka, coffee liqueur, and freshly brewed espresso, shaken and strained into a chilled martini glass. 
+
+Now you should have a much more substantial dataset for testing your index.

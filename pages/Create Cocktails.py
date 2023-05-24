@@ -35,6 +35,33 @@ def reset_pages():
 init_cocktail_session_variables()
 reset_pages()
 
+# Create a list of commnonly used spirits that the user can choose from
+spirits_list = [
+    # Basic spirits
+    "Vodka", "Gin", "Rum", "Tequila", "Mezcal", "Brandy", "Whiskey", "Scotch", 
+    "Bourbon", "Rye Whiskey", "Irish Whiskey", "Canadian Whisky", "Japanese Whisky", 
+    "Cognac", "Armagnac", "Calvados", "Pisco", "Grappa", "Sake", "Soju", "Shochu",
+    
+    # Liqueurs & Cordials
+    "Amaretto", "Baileys Irish Cream", "Benedictine", "Chartreuse (Green)", 
+    "Chartreuse (Yellow)", "Cointreau", "Drambuie", "Frangelico", "Galliano", 
+    "Grand Marnier", "Jägermeister", "Kahlua", "Limoncello", "Sambuca", 
+    "Southern Comfort", "St. Germain (Elderflower Liqueur)", "Tia Maria", 
+    "Chambord", "Aperol", "Campari", "Fernet Branca", "Pimm's No. 1",
+    
+    # Vermouths & Amaro
+    "Sweet Vermouth", "Dry Vermouth", "Red Vermouth", "White Vermouth", "Amaro Montenegro", 
+    "Amaro Nonino", "Averna", "Cynar", "Ramazzotti", "Zucca", "Amaro Lucano", 
+
+    # Flavored Spirits
+    "Absinthe", "Anisette", "Aquavit", "Arak", "Bitters", "Ouzo", "Schnapps", 
+    "Flavored Vodka", "Spiced Rum", "Peach Schnapps", "Peppermint Schnapps",
+    
+    # Other
+    "Moonshine", "Everclear", "Fireball", "Malibu (Coconut Rum)", 
+    "Margarita Mix", "Bloody Mary Mix", "Other" 
+]
+
 
 
 
@@ -78,7 +105,11 @@ async def get_cocktail_info():
     # Build the form 
 
     # Start by getting the input for the liquor that the user is trying to use up
-    liquor = st.text_input('What liquor are you trying to use up?')
+    chosen_liquor = st.selectbox('What spirit are you trying to use up? (Type to search by name)', spirits_list)
+    st.warning('**Note:  If you do not see the spirit you are looking for above, select "Other" and manually enter it below.**')
+    # If the spirit they need to use up is not in the list, allow them to enter it manually
+    if chosen_liquor == 'Other':
+        chosen_liquor = st.text_input('What is the name of the spirit you are trying to use up?')
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
     cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
     # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
@@ -93,7 +124,7 @@ async def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            await get_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            await get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
             image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
             st.session_state.image = generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
@@ -130,7 +161,7 @@ async def get_inventory_cocktail_info():
   
     # Build the form
     # Start by getting the input for the liquor that the user is trying to use up
-    liquor = st.text_input('What liquor are you trying to use up?')
+    liquor = st.text_input('What spirit are you trying to use up?')
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
     cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
     # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
