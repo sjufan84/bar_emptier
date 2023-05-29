@@ -6,9 +6,10 @@ import streamlit as st
 from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
 from utils.image_utils import generate_image
-import asyncio
+from streamlit import components
 from PIL import Image
 import pandas as pd
+import asyncio
 
 # Initialize the session state
 def init_cocktail_session_variables():
@@ -103,6 +104,11 @@ def get_cocktail_type():
 async def get_cocktail_info():
 
     # Build the form 
+    # Create the header
+    st.markdown('''<div style="text-align: center;">
+    <h2 style = "color: black;">Tell us about the cocktail you want to create!</h2>
+    </div>''', unsafe_allow_html=True)
+    st.text("")
 
     # Start by getting the input for the liquor that the user is trying to use up
     chosen_liquor = st.selectbox('What spirit are you trying to use up? (Type to search by name)', spirits_list)
@@ -251,6 +257,18 @@ def display_recipe():
         if create_another_cocktail_button:
             st.session_state.cocktail_page = "get_cocktail_info"
             st.experimental_rerun()
+
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h5 style = "color: black;">We would love to hear your feedback!</h3>
+    </div>''', unsafe_allow_html=True)
+    iframe = """
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    """
+
+    # Render the form using the `components.v1.html` function
+    components.v1.html(iframe, height=600)
 
 if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()

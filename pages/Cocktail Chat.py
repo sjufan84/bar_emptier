@@ -7,6 +7,7 @@ from utils.chat_utils import initialize_chat, save_chat_history_dict, add_messag
 import openai
 import os
 from streamlit_extras.switch_page_button import switch_page
+from streamlit import components
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -55,6 +56,12 @@ def follow_up_recipe_chat():
     # Add 1 to the i in session state so we can create unique widgets
     st.session_state.i += 1
 
+    # Create a header
+    st.markdown('''<div style="text-align: center;">
+    <h4 style = "color: black;">Bartender Chat</h1>
+    </div>''', unsafe_allow_html=True)
+    st.text("")
+
     # Display the recipe
     st.write(st.session_state.recipe_text)
 
@@ -65,7 +72,8 @@ def follow_up_recipe_chat():
         # Display the initial bartender message
         message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
     # Create a text area for the user to enter their message
-    user_message = st.text_area("Ask the bartender anything related to the recipe or just bar questions in general:", value='', height=150, max_chars=None, key=None)
+    user_message = st.text_area("Ask the bartender anything related to the recipe or just bar questions in general.  You may ask additional\
+                                follow up questions if needed.  Bartenders love to chat!", value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
     submit_user_follow_up_button = st.button("Submit Follow Up Question", type = 'primary', use_container_width=True)
     # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
@@ -84,13 +92,22 @@ def follow_up_recipe_chat():
                     message(chat_message['data']['content'], avatar_style='initials', seed = 'UU', key = f'{st.session_state.i}', is_user = True)
                     st.session_state.i += 1
                 elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='initials', seed = 'SC')
+                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}',  key = f'{st.session_state.i}')
                     st.session_state.i += 1
 
-    # Create space between the chat and the buttons
-    st.write("")
-    st.write("")
-    st.write("")
+    
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h5 style = "color: black;">We would love to hear your feedback!</h3>
+    </div>''', unsafe_allow_html=True)
+    iframe = """
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    """
+
+    # Render the form using the `components.v1.html` function
+    components.v1.html(iframe, height=600)
+
 
     # Create a button to allow the user to create a new recipe
     create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
@@ -105,6 +122,8 @@ def follow_up_recipe_chat():
         st.session_state.bar_chat_page = 'get_cocktail_type'
         switch_page("Create Cocktails")
         st.experimental_rerun()
+
+    
 
 
     # Create a button to allow the user to return to "Chat Home"
@@ -121,6 +140,12 @@ def follow_up_recipe_chat():
 
 # Define the general chat function
 def general_chat():
+    # Create a header
+    st.markdown('''<div style="text-align: center;">
+    <h4 style = "color: black;">Bartender Chat</h1>
+    </div>''', unsafe_allow_html=True)
+    st.text("")
+
     # Add 1 to the i in session state so we can create unique widgets
     st.session_state.i += 1
 
@@ -129,10 +154,11 @@ def general_chat():
         initial_message = "What questions can I answer for you today?"
         initialize_chat(initial_message)
     
-        # Display initial chef message
+        # Display initial bartender message
         message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
     # Create a text area for the user to enter their message
-    user_message = st.text_area('Ask any bar question you might have, i.e. "What is Triple Sec" or "What is the proper muddling technique?', value='', height=150, max_chars=None, key=None)
+    user_message = st.text_area('Ask any bar question you might have, i.e. "What is Triple Sec" or "What is the proper muddling technique?  You can carry\
+                                the conversation on with additional questions if needed.  Bartenders love to chat!', value='', height=150, max_chars=None, key=None)
     # Create a button to submit the user message
     submit_user_follow_up_button = st.button("Submit Your Question", type = 'primary', use_container_width=True)
     # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
@@ -148,16 +174,25 @@ def general_chat():
             # Display the chat history dictionary 
             for chat_message in st.session_state.chat_history_dict:
                 if chat_message['type'] == 'human':
-                    message(chat_message['data']['content'], avatar_style='initials', seed = 'UU', key = f'{st.session_state.i}', is_user = True)
+                    message(chat_message['data']['content'], avatar_style='initials', seed = 'You', key = f'{st.session_state.i}', is_user = True)
                     st.session_state.i += 1
                 elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='minavs', seed = f'{st.session_state.seed}')
+                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}')
+                    st.session_state.i += 1
                     st.session_state.i += 1
 
-    # Create space between the chat and the buttons
-    st.write("")
-    st.write("")
-    st.write("")
+    
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h5 style = "color: black;">We would love to hear your feedback!</h3>
+    </div>''', unsafe_allow_html=True)
+    iframe = """
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    """
+
+    # Render the form using the `components.v1.html` function
+    components.v1.html(iframe, height=600)
 
     # Create a button to allow the user to create a new recipe
     create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
@@ -184,6 +219,9 @@ def general_chat():
         # Return to the chat home page
         st.session_state.bar_chat_page = 'chat_choices'
         st.experimental_rerun()
+
+
+
 
 
 
