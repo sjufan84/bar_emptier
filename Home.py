@@ -66,14 +66,14 @@ with col2:
         st.experimental_rerun()
     
     
-    # Embed a Google Form to collect feedback
-    st.markdown('---')
-    st.markdown('''<div style="text-align: center;">
-    <h5 style = "color: black;">We would love to hear your feedback!</h3>
-    </div>''', unsafe_allow_html=True)
-    iframe = """
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-    """
+# Embed a Google Form to collect feedback
+st.markdown('---')
+st.markdown('''<div style="text-align: center;">
+<h5 style = "color: black;">We would love to hear your feedback!</h3>
+</div>''', unsafe_allow_html=True)
+iframe = """
+<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+"""
 
-    # Render the form using the `components.v1.html` function
-    components.v1.html(iframe, height=600)
+# Render the form using the `components.v1.html` function
+components.v1.html(iframe, height=600)
