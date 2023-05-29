@@ -177,7 +177,8 @@ def general_chat():
                     message(chat_message['data']['content'], avatar_style='initials', seed = 'You', key = f'{st.session_state.i}', is_user = True)
                     st.session_state.i += 1
                 elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}')
+                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}', key = f'{st.session_state.i}')
+
                     st.session_state.i += 1
                     st.session_state.i += 1
 
