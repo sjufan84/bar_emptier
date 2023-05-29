@@ -3,6 +3,7 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
+from streamlit import components
 
 
 # Initialize the session state
@@ -64,6 +65,15 @@ with col2:
         switch_page('Cocktail Chat')
         st.experimental_rerun()
     
-# Create a message that will allow the user to contact the developer for more information
-st.markdown("<h4 style='text-align: center;'>We want to hear from you!  If you have any feedback to share, or are interested in collaborating on this project, please reach out to us <a href='mailto:dave_thomas@enoughwebapp.com'>here.</a></h3>", unsafe_allow_html=True)
+    
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h5 style = "color: black;">We would love to hear your feedback!</h3>
+    </div>''', unsafe_allow_html=True)
+    iframe = """
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    """
 
+    # Render the form using the `components.v1.html` function
+    components.v1.html(iframe, height=600)
