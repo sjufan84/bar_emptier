@@ -197,6 +197,7 @@ def general_chat():
         # Reset the chat history and chat history dictionary
         st.session_state.chat_history_dict = {}
         st.session_state.chat_messages = []
+        st.session_state.history = None
         # Return to the recipe creation page
         st.session_state.bar_chat_page = 'get_cocktail_type'
         switch_page("Create Cocktails")
@@ -209,6 +210,7 @@ def general_chat():
     # And return to the chat home page
     if return_to_chat_home_button:
         # Reset the chat history and chat history dictionary
+        st.session_state.history = None
         st.session_state.chat_history_dict = {}
         st.session_state.chat_messages = []
         # Return to the chat home page

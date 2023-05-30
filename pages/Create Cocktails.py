@@ -15,10 +15,10 @@ import asyncio
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated'
     ]
     default_values = [
-        'get_cocktail_info', '', '', '', None, [], ''
+        'get_cocktail_info', '', '', '', None, [], '', False
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -101,7 +101,7 @@ def get_cocktail_type():
                 switch_page('Upload Inventory')
         
 
-async def get_cocktail_info():
+def get_cocktail_info():
 
     # Build the form 
     # Create the header
@@ -130,9 +130,8 @@ async def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            await get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = generate_image(image_prompt)
+            get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
+            st.session_state.image_generated = False
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
@@ -152,14 +151,12 @@ async def get_menu_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            await get_menu_cocktail_recipe(liquor, cocktail_type, theme)
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = generate_image(image_prompt)
+            get_menu_cocktail_recipe(liquor, cocktail_type, theme)
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
 # Create a function to get info for a cocktail that takes into account the user's inventory
-async def get_inventory_cocktail_info():
+def get_inventory_cocktail_info():
     st.markdown('''<div style="text-align: center;">
     <h5>Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
         when creating your cocktail.</h5>
@@ -182,7 +179,7 @@ async def get_inventory_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            await get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
+            get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
             image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
             st.session_state.image = generate_image(image_prompt)
             st.session_state.cocktail_page = "display_recipe"
@@ -229,13 +226,24 @@ def display_recipe():
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
         st.text("")
-        # Display the recipe image
-        st.image(st.session_state.image['output_url'], use_column_width=True)
+        # Placeholder for the image
+        image_placeholder = st.empty()
+        # Check if the image has already been generated
+        if st.session_state.image_generated == False:
+            image_placeholder.text("Generating cocktail image...")
+            # Generate the image
+            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
+            st.session_state.image = generate_image(image_prompt)
+            st.session_state.image_generated = True
+        # Update the placeholder with the generated image
+        image_placeholder.image(st.session_state.image['output_url'], use_column_width=True)
         # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
         st.markdown('''<div style="text-align: center;">
         <p>AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
         </div>''', unsafe_allow_html=True)
         st.warning('**Note:** The actual cocktail may not look exactly like this!')
+        # Save the selected recipe as a PDF
+
         # Save the selected recipe as a PDF
             # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
 
@@ -270,7 +278,7 @@ def display_recipe():
 if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()
 elif st.session_state.cocktail_page == "get_cocktail_info":
-    asyncio.run(get_cocktail_info())
+    get_cocktail_info()
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
     asyncio.run(get_menu_cocktail_info())
 elif st.session_state.cocktail_page == "get_inventory_cocktail_info":
