@@ -106,7 +106,7 @@ async def get_cocktail_info():
     # Build the form 
     # Create the header
     st.markdown('''<div style="text-align: center;">
-    <h2 style = "color: black;">Tell us about the cocktail you want to create!</h2>
+    <h2>Tell us about the cocktail you want to create!</h2>
     </div>''', unsafe_allow_html=True)
     st.text("")
 
