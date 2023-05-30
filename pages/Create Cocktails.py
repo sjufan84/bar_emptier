@@ -101,7 +101,7 @@ def get_cocktail_type():
                 switch_page('Upload Inventory')
         
 
-def get_cocktail_info():
+async def get_cocktail_info():
 
     # Build the form 
     # Create the header
@@ -130,7 +130,7 @@ def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
+            await get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
@@ -278,7 +278,7 @@ def display_recipe():
 if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()
 elif st.session_state.cocktail_page == "get_cocktail_info":
-    get_cocktail_info()
+    asyncio.run(get_cocktail_info())
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
     asyncio.run(get_menu_cocktail_info())
 elif st.session_state.cocktail_page == "get_inventory_cocktail_info":

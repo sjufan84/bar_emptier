@@ -206,7 +206,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
 
 
 # Define the function to call the openai API
-def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
+async def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     # Define the messages
     messages = [
         {
@@ -252,7 +252,7 @@ def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     except Exception as e:
         with st.spinner("Error parsing recipe. Retrying..."):
             parsed_recipe = RetryWithErrorOutputParser().parse(clean_recipe)
-            
+
 
     # Update the session state
     st.session_state.update({
