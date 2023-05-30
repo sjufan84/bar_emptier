@@ -76,8 +76,8 @@ def get_cocktail_type():
     else:    
         # Give the user the option to upload a menu or menus for the model to reference when creating the cocktails
         st.markdown('''<div style="text-align: center;">
-        <h2 style = "color: black;">Welcome to the Cocktail Creator!</h2>
-        <h5 style = "color: black;">If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
+        <h2>Welcome to the Cocktail Creator!</h2>
+        <h5>If you would like to upload your food and / or existing bar menus, or your inventory, please do so below.  This can\
         be useful to provide extra context for the model when creating your cocktails.  Otherwise, you can proceed directly to the cocktail creation page.</h5>
         </div>''', unsafe_allow_html=True)
         proceed_without_menu_button = st.button('Proceed Directly to Cocktail Creation', use_container_width=True, type = 'primary')
@@ -161,7 +161,7 @@ async def get_menu_cocktail_info():
 # Create a function to get info for a cocktail that takes into account the user's inventory
 async def get_inventory_cocktail_info():
     st.markdown('''<div style="text-align: center;">
-    <h5 style = "color: black;">Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
+    <h5>Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
         when creating your cocktail.</h5>
         </div>''', unsafe_allow_html=True)
   
@@ -203,7 +203,7 @@ async def get_inventory_cocktail_info():
 def display_recipe():
     # Create the header
     st.markdown('''<div style="text-align: center;">
-    <h2 style = "color: black;">Here's your recipe!</h1>
+    <h4>Here's your recipe!</h4>
     <hr>    
     </div>''', unsafe_allow_html=True)
     # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
@@ -233,7 +233,7 @@ def display_recipe():
         st.image(st.session_state.image['output_url'], use_column_width=True)
         # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
         st.markdown('''<div style="text-align: center;">
-        <p style = "color: black;">AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
+        <p>AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
         </div>''', unsafe_allow_html=True)
         st.warning('**Note:** The actual cocktail may not look exactly like this!')
         # Save the selected recipe as a PDF

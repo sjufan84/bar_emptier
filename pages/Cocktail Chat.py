@@ -58,7 +58,7 @@ def follow_up_recipe_chat():
 
     # Create a header
     st.markdown('''<div style="text-align: center;">
-    <h4 style = "color: black;">Bartender Chat</h1>
+    <h4>Bartender Chat</h4>
     </div>''', unsafe_allow_html=True)
     st.text("")
 
@@ -139,7 +139,7 @@ def follow_up_recipe_chat():
 def general_chat():
     # Create a header
     st.markdown('''<div style="text-align: center;">
-    <h4 style = "color: black;">Bartender Chat</h1>
+    <h4>Bartender Chat</h4>
     </div>''', unsafe_allow_html=True)
     st.text("")
 
