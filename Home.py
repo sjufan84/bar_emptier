@@ -35,7 +35,7 @@ reset_pages()
 # This is a custom class that I created in the style.css file
 # Set the text to be centered
 st.markdown('''<div style="text-align: center;">
-<h2 class="title">Bar Emptier AI</h2>
+<h2 class="title">BarKeepAI</h2>
 <p>The app that finally answers the question: "What the hell am I going to do with these 17 bottles of Frangelico that someone accidentally ordered?"</p>
 </div>''', unsafe_allow_html=True)
 # Create two columns for the home page
@@ -66,14 +66,7 @@ with col2:
         st.experimental_rerun()
     
     
-# Embed a Google Form to collect feedback
 st.markdown('---')
-st.markdown('''<div style="text-align: center;">
-<h5 style = "color: black;">We would love to hear your feedback!</h3>
-</div>''', unsafe_allow_html=True)
-iframe = """
-<iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-"""
 
-# Render the form using the `components.v1.html` function
-components.v1.html(iframe, height=600)
+src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
+components.v1.iframe(src, height=600, scrolling=True)

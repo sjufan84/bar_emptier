@@ -182,18 +182,24 @@ def general_chat():
                     st.session_state.i += 1
                     st.session_state.i += 1
 
-    
-    # Embed a Google Form to collect feedback
-    st.markdown('---')
-    st.markdown('''<div style="text-align: center;">
-    <h5 style = "color: black;">We would love to hear your feedback!</h3>
-    </div>''', unsafe_allow_html=True)
-    iframe = """
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-    """
+    with st.container():
+        st.markdown('---')
+        st.markdown(
+            '''
+            <div style="text-align: center;">
+                <h5 style = "color: black;">We would love to hear your feedback!</h3>
+            </div>
+            ''', 
+            unsafe_allow_html=True
+        )
+        
+        iframe = """
+        <div style="display: flex; justify-content: center;">
+            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="80vw" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+        """
+        components.v1.html(iframe, height=600, scrolling=True)
 
-    # Render the form using the `components.v1.html` function
-    components.v1.html(iframe, height=600)
 
     # Create a button to allow the user to create a new recipe
     create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
