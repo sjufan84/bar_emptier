@@ -99,14 +99,11 @@ def follow_up_recipe_chat():
     # Embed a Google Form to collect feedback
     st.markdown('---')
     st.markdown('''<div style="text-align: center;">
-    <h5 style = "color: black;">We would love to hear your feedback!</h3>
+    <h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
     </div>''', unsafe_allow_html=True)
-    iframe = """
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="700" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-    """
 
-    # Render the form using the `components.v1.html` function
-    components.v1.html(iframe, height=600)
+    src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
+    components.v1.iframe(src, height=600, scrolling=True)
 
 
     # Create a button to allow the user to create a new recipe
@@ -182,23 +179,14 @@ def general_chat():
                     st.session_state.i += 1
                     st.session_state.i += 1
 
-    with st.container():
-        st.markdown('---')
-        st.markdown(
-            '''
-            <div style="text-align: center;">
-                <h5 style = "color: black;">We would love to hear your feedback!</h3>
-            </div>
-            ''', 
-            unsafe_allow_html=True
-        )
-        
-        iframe = """
-        <div style="display: flex; justify-content: center;">
-            <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true" width="80vw" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-        </div>
-        """
-        components.v1.html(iframe, height=600, scrolling=True)
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
+    </div>''', unsafe_allow_html=True)
+
+    src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
+    components.v1.iframe(src, height=600, scrolling=True)
 
 
     # Create a button to allow the user to create a new recipe

@@ -67,6 +67,9 @@ with col2:
     
     
 st.markdown('---')
+st.markdown('''<div style="text-align: center;">
+<h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
+</div>''', unsafe_allow_html=True)
 
 src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
 components.v1.iframe(src, height=600, scrolling=True)
