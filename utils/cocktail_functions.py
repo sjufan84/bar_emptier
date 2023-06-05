@@ -43,6 +43,10 @@ if "glass" not in st.session_state:
     st.session_state.glass = ""
 if "flavor_profile" not in st.session_state:
     st.session_state.flavor_profile = ""
+if "inventory_ingredients" not in st.session_state:
+    st.session_state.inventory_ingredients = []
+if "other_ingredients" not in st.session_state:
+    st.session_state.other_ingredients = []
 
 
 # We want to create a parser object to parse the recipe into the variables we want using Pydantic
@@ -54,8 +58,20 @@ class CocktailRecipe(BaseModel):
     glass: str = Field(description="Glass to serve the cocktail in")
     flavor_profile: str = Field(description="Flavor profile of the cocktail")
 
-# Instantiate the parser object
+# We will create a separate parser for inventory cocktails
+class InventoryCocktailRecipe(BaseModel):
+    name: str = Field(description="Name of the cocktail recipe")
+    ingredients: List[tuple] = Field(description="List of tuples of the ingredients in the cocktail with the amounts as a float and the names of the ingredients as a string.")
+    # ingredient_amounts: List[float] = Field(description="Amounts of each ingredient in the cocktail")
+    instructions: List[str] = Field(description="Instructions for preparing the cocktail")
+    garnish: str = Field(description="Garnish for the cocktail")
+    glass: str = Field(description="Glass to serve the cocktail in")
+    flavor_profile: str = Field(description="Flavor profile of the cocktail")
+
+# Instantiate the parser objects
 parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
+inventory_parser = PydanticOutputParser(pydantic_object=InventoryCocktailRecipe)
+
 
 
 
@@ -65,6 +81,18 @@ parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
 def text_cocktail_recipe(recipe: CocktailRecipe) -> str:
     ingredients = "\n".join(recipe.ingredients)
     instructions = "\n".join(recipe.instructions)
+    formatted_recipe = (
+        f"Recipe Name: {recipe.name}\n\n"
+        f"Ingredients:\n{ingredients}\n\n"
+        f"Instructions:\n{instructions}\n\n"
+        f"Garnish: {recipe.garnish}\n\n"
+        f"Glass: {recipe.glass}"
+    )
+    return formatted_recipe
+
+def text_inventory_cocktail_recipe(recipe: InventoryCocktailRecipe) -> str:
+    instructions = "\n".join(recipe.instructions)
+    ingredients = "\n".join([f"{ingredient[0]} {ingredient[1]}" for ingredient in recipe.ingredients])
     formatted_recipe = (
         f"Recipe Name: {recipe.name}\n\n"
         f"Ingredients:\n{ingredients}\n\n"
@@ -206,7 +234,7 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
 
 
 # Define the function to call the openai API
-async def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
+def get_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     # Define the messages
     messages = [
         {
@@ -284,7 +312,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
                                 Please be as specific as possible with your instructions."
     },
     {
-        "role": "user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n"
+        "role": "user", "content": f"Please use the following format:\n{inventory_parser.get_format_instructions()}\n"
     }
     ]
 
@@ -303,18 +331,36 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         n=1,
         )
 
+        # Clean and parse the recipe
         recipe = response.choices[0].message.content
-        st.session_state.recipe = recipe
-        st.session_state.response = response
-        parsed_recipe = parser.parse(recipe)
-        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
-        st.session_state.parsed_recipe = parsed_recipe
-        st.session_state.cocktail_name = parsed_recipe.name
-        st.session_state.ingredients = parsed_recipe.ingredients
-        st.session_state.instructions = parsed_recipe.instructions
-        st.session_state.garnish = parsed_recipe.garnish
-        st.session_state.glass = parsed_recipe.glass
-        st.session_state.flavor_profile = parsed_recipe.flavor_profile
+        clean_recipe = clean_output(recipe)
+        try:
+            parsed_recipe = inventory_parser.parse(clean_recipe)
+            st.session_state.recipe = recipe
+            st.session_state.response = response
+            parsed_recipe = inventory_parser.parse(recipe)
+            st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+            st.session_state.parsed_recipe = parsed_recipe
+            st.session_state.cocktail_name = parsed_recipe.name
+            st.session_state.instructions = parsed_recipe.instructions
+            st.session_state.garnish = parsed_recipe.garnish
+            st.session_state.glass = parsed_recipe.glass
+            st.session_state.flavor_profile = parsed_recipe.flavor_profile
+            st.session_state.ingredients = parsed_recipe.ingredients
+        except Exception as e:
+            with st.spinner("Error parsing recipe. Retrying..."):
+                parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                st.session_state.recipe = recipe
+                st.session_state.response = response
+                parsed_recipe = inventory_parser.parse(recipe)
+                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                st.session_state.parsed_recipe = parsed_recipe
+                st.session_state.cocktail_name = parsed_recipe.name
+                st.session_state.instructions = parsed_recipe.instructions
+                st.session_state.garnish = parsed_recipe.garnish
+                st.session_state.glass = parsed_recipe.glass
+                st.session_state.flavor_profile = parsed_recipe.flavor_profile
+                st.session_state.ingredients = parsed_recipe.ingredients
 
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
@@ -330,17 +376,35 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             )
 
             recipe = response.choices[0].message.content
-            st.session_state.recipe = recipe
-            st.session_state.response = response
-            parsed_recipe = parser.parse(recipe)
-            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
-            st.session_state.parsed_recipe = parsed_recipe
-            st.session_state.cocktail_name = parsed_recipe.name
-            st.session_state.ingredients = parsed_recipe.ingredients
-            st.session_state.instructions = parsed_recipe.instructions
-            st.session_state.garnish = parsed_recipe.garnish
-            st.session_state.glass = parsed_recipe.glass
-            st.session_state.flavor_profile = parsed_recipe.flavor_profile
+            clean_recipe = clean_output(recipe)
+            try:
+                parsed_recipe = inventory_parser.parse(clean_recipe)
+                st.session_state.recipe = recipe
+                st.session_state.response = response
+                parsed_recipe = inventory_parser.parse(recipe)
+                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                st.session_state.parsed_recipe = parsed_recipe
+                st.session_state.cocktail_name = parsed_recipe.name
+                st.session_state.instructions = parsed_recipe.instructions
+                st.session_state.garnish = parsed_recipe.garnish
+                st.session_state.glass = parsed_recipe.glass
+                st.session_state.flavor_profile = parsed_recipe.flavor_profile
+                st.session_state.ingredients = parsed_recipe.ingredients
+            except Exception as e:
+                with st.spinner("Error parsing recipe. Retrying..."):
+                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                    st.session_state.recipe = recipe
+                    st.session_state.response = response
+                    parsed_recipe = inventory_parser.parse(recipe)
+                    st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                    st.session_state.parsed_recipe = parsed_recipe
+                    st.session_state.cocktail_name = parsed_recipe.name
+                    st.session_state.instructions = parsed_recipe.instructions
+                    st.session_state.garnish = parsed_recipe.garnish
+                    st.session_state.glass = parsed_recipe.glass
+                    st.session_state.flavor_profile = parsed_recipe.flavor_profile
+                    st.session_state.ingredients = parsed_recipe.ingredients
+
 
 
 
@@ -357,19 +421,35 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
         )
 
             recipe = response.choices[0].message.content
-            st.session_state.recipe = recipe
-            st.session_state.response = response
-            parsed_recipe = parser.parse(recipe)
-            st.session_state.parsed_recipe = parsed_recipe
-            st.session_state.cocktail_name = parsed_recipe.name
-            st.session_state.ingredients = parsed_recipe.ingredients
-            st.session_state.instructions = parsed_recipe.instructions
-            st.session_state.garnish = parsed_recipe.garnish
-            st.session_state.glass = parsed_recipe.glass
-            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
-            st.session_state.flavor_profile = parsed_recipe.flavor_profile
+            clean_recipe = clean_output(recipe)
+            try:
+                parsed_recipe = inventory_parser.parse(clean_recipe)
+                st.session_state.recipe = recipe
+                st.session_state.response = response
+                parsed_recipe = inventory_parser.parse(recipe)
+                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                st.session_state.parsed_recipe = parsed_recipe
+                st.session_state.cocktail_name = parsed_recipe.name
+                st.session_state.instructions = parsed_recipe.instructions
+                st.session_state.garnish = parsed_recipe.garnish
+                st.session_state.glass = parsed_recipe.glass
+                st.session_state.flavor_profile = parsed_recipe.flavor_profile
+                st.session_state.ingredients = parsed_recipe.ingredients
+            except Exception as e:
+                with st.spinner("Error parsing recipe. Retrying..."):
+                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                    st.session_state.recipe = recipe
+                    st.session_state.response = response
+                    parsed_recipe = inventory_parser.parse(recipe)
+                    st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                    st.session_state.parsed_recipe = parsed_recipe
+                    st.session_state.cocktail_name = parsed_recipe.name
+                    st.session_state.instructions = parsed_recipe.instructions
+                    st.session_state.garnish = parsed_recipe.garnish
+                    st.session_state.glass = parsed_recipe.glass
+                    st.session_state.flavor_profile = parsed_recipe.flavor_profile
+                    st.session_state.ingredients = parsed_recipe.ingredients
+
 
             
-
-    # Return the recipe
     return recipe

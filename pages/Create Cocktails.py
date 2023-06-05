@@ -9,7 +9,6 @@ from utils.image_utils import generate_image
 from streamlit import components
 from PIL import Image
 import pandas as pd
-import asyncio
 
 # Initialize the session state
 def init_cocktail_session_variables():
@@ -101,7 +100,7 @@ def get_cocktail_type():
                 switch_page('Upload Inventory')
         
 
-async def get_cocktail_info():
+def get_cocktail_info():
 
     # Build the form 
     # Create the header
@@ -130,7 +129,7 @@ async def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            await get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
+            get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
@@ -155,46 +154,6 @@ async def get_menu_cocktail_info():
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
-# Create a function to get info for a cocktail that takes into account the user's inventory
-def get_inventory_cocktail_info():
-    st.markdown('''<div style="text-align: center;">
-    <h5>Since you have uploaded your inventory, the model will prioritize using spirits you already have on hand\
-        when creating your cocktail.</h5>
-        </div>''', unsafe_allow_html=True)
-  
-    # Build the form
-    # Start by getting the input for the liquor that the user is trying to use up
-    liquor = st.text_input('What spirit are you trying to use up?')
-    # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
-    cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
-    # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
-    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'American',\
-                            'Mexican', 'Italian', 'French', 'Chinese', 'Japanese', 'Thai', 'Indian', 'Greek', 'Spanish', 'Korean', 'Vietnamese',\
-                            'Mediterranean', 'Middle Eastern', 'Caribbean', 'British', 'German', 'Irish', 'African', 'Moroccan', 'Nordic', 'Eastern European',\
-                            'Jewish', 'South American', 'Central American', 'Australian', 'New Zealand', 'Pacific Islands', 'Canadian', 'Other'])
-    # Allow the user to enter a theme for the cocktail if they want
-    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
-
-    # Create the submit button
-    cocktail_submit_button = st.button(label='Create your cocktail!')
-    if cocktail_submit_button:
-        with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme)
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = generate_image(image_prompt)
-            st.session_state.cocktail_page = "display_recipe"
-            st.experimental_rerun()
-
-    st.markdown('---')
-    # Build the form 
-    # Display the user's inventory
-    st.write('Here is your current inventory:')
-    # Create a dataframe from the inventory list
-    inventory_df = pd.DataFrame(st.session_state.inventory_list, columns=['Ingredient', 'Quantity'])
-    # Set the index to the ingredient name
-    inventory_df.set_index('Ingredient', inplace=True)
-    # Display the dataframe
-    st.dataframe(inventory_df, use_container_width=True)
 
 
 def display_recipe():
@@ -278,10 +237,8 @@ def display_recipe():
 if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()
 elif st.session_state.cocktail_page == "get_cocktail_info":
-    asyncio.run(get_cocktail_info())
+    get_cocktail_info()
 elif st.session_state.cocktail_page == "get_menu_cocktail_info":
-    asyncio.run(get_menu_cocktail_info())
-elif st.session_state.cocktail_page == "get_inventory_cocktail_info":
-    asyncio.run(get_inventory_cocktail_info())
+    get_menu_cocktail_info()
 elif st.session_state.cocktail_page == "display_recipe":
     display_recipe()

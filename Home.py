@@ -10,10 +10,10 @@ from streamlit import components
 def init_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'num_recipes'
+        'cocktail_page', 'num_recipes', 'demo_page'
     ]
     default_values = [
-        'get_cocktail_info', 0    
+        'get_cocktail_info', 0, 'upload_inventory'    
     ]
 
     for var, default_value in zip(session_vars, default_values):
