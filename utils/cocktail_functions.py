@@ -8,6 +8,11 @@ from langchain.output_parsers import PydanticOutputParser, RetryWithErrorOutputP
 from pydantic import BaseModel, Field
 from typing import List
 import re
+from langchain.chains import LLMChain
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts.prompt import PromptTemplate
+
+
 
 
 
@@ -19,6 +24,8 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
 # Initialize the session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 if "cocktail_name" not in st.session_state:
     st.session_state.cocktail_name = ""
 if "recipe" not in st.session_state:
@@ -71,6 +78,26 @@ class InventoryCocktailRecipe(BaseModel):
 # Instantiate the parser objects
 parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
 inventory_parser = PydanticOutputParser(pydantic_object=InventoryCocktailRecipe)
+
+prompt = PromptTemplate(
+    input_variables=['messages'],
+    output_parser = inventory_parser,
+    template = """
+    You are a master mixologist creating cocktails for the user.  Your prompt messages are {messages}.
+    """
+)
+
+prompt.format(messages=st.session_state.messages)
+
+chain = LLMChain(
+    verbose=True,
+    llm = ChatOpenAI(
+        model_name="gpt-3.5-turbo",
+        temperature=0),
+    prompt = prompt,
+)
+        
+
 
 
 
@@ -316,7 +343,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     }
     ]
 
- 
+    st.session_state.messages = messages
 
     # Call the OpenAI API
     try:
@@ -349,7 +376,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             st.session_state.ingredients = parsed_recipe.ingredients
         except Exception as e:
             with st.spinner("Error parsing recipe. Retrying..."):
-                parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser, retry_chain=LLMChain).parse(clean_recipe)
                 st.session_state.recipe = recipe
                 st.session_state.response = response
                 parsed_recipe = inventory_parser.parse(recipe)
@@ -392,7 +419,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
                 st.session_state.ingredients = parsed_recipe.ingredients
             except Exception as e:
                 with st.spinner("Error parsing recipe. Retrying..."):
-                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser, retry_chain=chain).parse(clean_recipe)
                     st.session_state.recipe = recipe
                     st.session_state.response = response
                     parsed_recipe = inventory_parser.parse(recipe)
@@ -437,7 +464,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
                 st.session_state.ingredients = parsed_recipe.ingredients
             except Exception as e:
                 with st.spinner("Error parsing recipe. Retrying..."):
-                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser).parse(clean_recipe)
+                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser, retry_chain=chain).parse(clean_recipe)
                     st.session_state.recipe = recipe
                     st.session_state.response = response
                     parsed_recipe = inventory_parser.parse(recipe)

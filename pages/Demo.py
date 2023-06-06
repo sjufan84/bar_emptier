@@ -36,10 +36,11 @@ openai.organization = os.getenv("OPENAI_ORG")
 def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
-        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'demo_page', 'chosen_spirit', 'estimated_cost', 'recipe_cost', 'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost'
+        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'demo_page', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients'
     ]
     default_values = [
-        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00
+        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], []
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -134,28 +135,28 @@ def estimate_cost_of_non_inventory_items(ingredients):
 
 # Define a function to cost out the recipe
 def cost_out_recipe():
-    # Check which ingredients are in the inventory
-    in_inventory = []
-    for ingredient in st.session_state.ingredients:
-        if ingredient[1].lower() in st.session_state.df['Name'].str.lower().values:
-            in_inventory.append(ingredient)
+
     # Muliply the cost of each ingredient by the value in the "Cost per oz" column in the dataframe and save it to a new list of tuples
     ingredients_cost = []
     total_cost = 0
-    for ingredient in in_inventory:
-        ingredients_cost.append((f'{ingredient[0]} oz {ingredient[1]}', (st.session_state.df.loc[st.session_state.df['Name'].str.lower() == ingredient[1].lower(), 'Cost per oz'].values[0] * ingredient[0])))
-        total_cost += (st.session_state.df.loc[st.session_state.df['Name'].str.lower() == ingredient[1].lower(), 'Cost per oz'].values[0] * ingredient[0])
-        st.write(total_cost)
-    # Conver the second value of the tuple to a float with two decimal places and a dollar sign
+    # Remove any duplicates from the inventory_ingredients session state variable
+    st.session_state.inventory_ingredients = list(set(st.session_state.inventory_ingredients))
+    # Remove any duplicates from the ni_ingredients session state variable
+    st.session_state.ni_ingredients = list(set(st.session_state.ni_ingredients))
+
+    # Get the cost of the inventory ingredients
+    for ingredient in st.session_state.inventory_ingredients:
+        st.write(ingredient)
+        ingredient_cost_per_oz = st.session_state.df.loc[st.session_state.df['Name'].str.lower() == ingredient[1].lower(), 'Cost per oz'].values[0]
+        recipe_ingredient_cost = ingredient_cost_per_oz * ingredient[0]
+        ingredients_cost.append((f'{ingredient[0]} oz {ingredient[1]}', recipe_ingredient_cost))
+        total_cost += recipe_ingredient_cost
+    # Convert the second value of the tuple to a float with two decimal places and a dollar sign
     for i in range(len(ingredients_cost)):
         ingredients_cost[i] = (ingredients_cost[i][0], f'{round(ingredients_cost[i][1], 2)}')
-    non_inventory = []
-    # Check which ingredients are not in the inventory
-    for ingredient in st.session_state.ingredients:
-        if ingredient[1].lower() not in st.session_state.df['Name'].str.lower().values:
-            non_inventory.append(ingredient)
+    
     # Call the function to get the cost of the non-inventory ingredients
-    estimate_cost_of_non_inventory_items(non_inventory)
+    estimate_cost_of_non_inventory_items(st.session_state.ni_ingredients)
     # Append the cost of the non-inventory ingredients to the list of tuples
     ingredients_cost.append((f'Estimated total cost of other ingredients:', f'{round(st.session_state.total_ni_cost, 2)}'))
 
@@ -239,7 +240,7 @@ def choose_spirit():
     
     # Check to make sure only one of the "Use in Cocktail" checkboxes is checked, otherwise display an error message
     if edit_df['Use in Cocktail'].sum() == 1:
-        display_data_editor_button = st.button('Display Data Editor Session State', use_container_width=True, type = 'secondary')
+        display_data_editor_button = st.button(f'Create a cocktail using {edit_df[edit_df["Use in Cocktail"] == True]["Name"].values[0]}', use_container_width=True, type = 'primary')
         if display_data_editor_button:
             # Get the name of the spirit the user selected
             st.session_state['chosen_spirit'] = edit_df[edit_df['Use in Cocktail'] == True]['Name'].values[0]
@@ -256,7 +257,7 @@ def create_cocktail():
     # Build the form 
     # Create the header
     st.markdown('''<div style="text-align: center;">
-    <h3 style = "color:#7b3583;">Tell us about the cocktail you want to create!</h3>
+    <h4 style = "color:#7b3583;">Tell us about the cocktail you want to create!</h4>
     </div>''', unsafe_allow_html=True)
     st.text("")
 
@@ -264,6 +265,8 @@ def create_cocktail():
     st.markdown(f'''<div style="text-align: center;">
     <h5>Spirit selected: <div style="color:red;">{st.session_state.chosen_spirit}</div></h5>
     </div>''', unsafe_allow_html=True)
+
+    st.text("")
 
     # Set the chosen_liquor variable to the spirit the user selected
     chosen_liquor = st.session_state.chosen_spirit
@@ -301,25 +304,26 @@ def display_recipe():
         st.markdown(f'**Recipe Name:** {st.session_state["cocktail_name"]}')
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
-        # Check to see if the name of each ingredient is in the inventory dataframe regardless of case, and if it is, display it in red
-        # If they are not in the inventory dataframe, display them in black
+        
+        # Check to see if there are any non-alphanumeric characters in the ingredient name and if so, remove them
         for ingredient in st.session_state.ingredients:
-            # Check to see if there are any non-alphanumeric characters in the ingredient name and if so, remove them
-            if re.search(r'\W', ingredient[1]):
-                ingredient_name = re.sub(r'\W', '', ingredient[1])
-            else:
-                ingredient_name = ingredient[1]
+            ingredient_name = ingredient[1].replace('[', '').replace(']', '').strip()
+            # Replace the 1st value in the ingredient tuple with the ingredient name
+            ingredient = (ingredient[0], ingredient_name)
 
             if ingredient_name.lower() in st.session_state.df['Name'].str.lower().values:
-                st.markdown(f'* <div style="color: red;">{ingredient[0]} oz {ingredient[1]}</div>', unsafe_allow_html=True)
+                st.markdown(f'* <div style="color: red;">{ingredient[0]} oz {ingredient_name}</div>', unsafe_allow_html=True)
+                st.session_state['inventory_ingredients'].append(ingredient)
             else:
+                st.session_state['ni_ingredients'].append(ingredient)
                 # If the ingredient is not a float, display it without the oz
                 if type(ingredient[0]) != float:
-                    st.markdown(f'* {ingredient[0]} {ingredient[1]}', unsafe_allow_html=True)
+                    st.markdown(f'* {ingredient[0]} {ingredient_name}', unsafe_allow_html=True)
                 else:
-                    st.markdown(f'* {ingredient[0]} oz {ingredient[1]}', unsafe_allow_html=True)
+                    st.markdown(f'* {ingredient[0]} oz {ingredient_name}', unsafe_allow_html=True)
         # Create a key so the user can see what the colors mean
         st.markdown(f'<div style="color: red;">Note: If the color of the ingredient is red, it is from your inventory', unsafe_allow_html=True)
+      
 
         
           
@@ -394,19 +398,15 @@ def display_cost():
         # If they are not in the inventory dataframe, display them in black
         for ingredient in st.session_state.ingredients:
             # Check to see if there are any non-alphanumeric characters in the ingredient name and if so, remove them
-            if re.search(r'\W', ingredient[1]):
-                ingredient_name = re.sub(r'\W', '', ingredient[1])
-            else:
-                ingredient_name = ingredient[1]
-
+            ingredient_name = ingredient[1]
             if ingredient_name.lower() in st.session_state.df['Name'].str.lower().values:
-                st.markdown(f'* <div style="color: red;">{ingredient[0]} oz {ingredient[1]}</div>', unsafe_allow_html=True)
+                st.markdown(f'* <div style="color: red;">{ingredient[0]} oz {ingredient_name}</div>', unsafe_allow_html=True)
             else:
                 # If the ingredient is not a float, display it without the oz
                 if type(ingredient[0]) != float:
-                    st.markdown(f'* {ingredient[0]} {ingredient[1]}', unsafe_allow_html=True)
+                    st.markdown(f'* {ingredient[0]} {ingredient_name}', unsafe_allow_html=True)
                 else:
-                    st.markdown(f'* {ingredient[0]} oz {ingredient[1]}', unsafe_allow_html=True)
+                    st.markdown(f'* {ingredient[0]} oz {ingredient_name}', unsafe_allow_html=True)
         # Create a key so the user can see what the colors mean
         st.markdown(f'<div style="color: red;">**Inventory Item</div>', unsafe_allow_html=True)
         st.text("")
@@ -420,7 +420,7 @@ def display_cost():
     with col2:
         # Calculate and display total costs and the potential profit
         st.markdown(f'**Total cost to use up the amount of {st.session_state.chosen_spirit} in your inventory:**')
-        st.markdown(f'You can make **{st.session_state.num_drinks}** "{st.session_state.cocktail_name}s" with the amount of {st.session_state.chosen_spirit} you have in your inventory.')
+        st.markdown(f'You can make **{st.session_state.num_drinks}** of the "{st.session_state.cocktail_name}" with the amount of {st.session_state.chosen_spirit} you have in your inventory.')
 
         total_drinks_cost = st.session_state.total_cost * st.session_state.num_drinks
         st.write(f'The total cost of the recipe for {st.session_state.num_drinks} drinks is ${total_drinks_cost:.2f}.')
@@ -438,7 +438,7 @@ def display_cost():
 
         # Display the profit
         st.write(f'The total profit for {st.session_state.num_drinks} drinks is ${total_profit:.2f}.')
-        st.write(f'The profit per drink is ${profit_per_drink:.2f}.')
+        st.write(f'The profit per drink is ${profit_per_drink:.2f} or {(profit_per_drink / st.session_state.price) * 100:.2f}%.')
 
     st.text("")
     st.text("")
@@ -448,6 +448,12 @@ def display_cost():
 
     # Note the difference in the value of the chosen_spirit in inventory and the total profit
     st.success(f"Congratulations!  You turned \${total_value:.2f} worth of {st.session_state.chosen_spirit} into ${total_profit:.2f} worth of profit!")
+
+    # Create a button to go back to the recipe page
+    back_button = st.button('Create another recipe', type = 'primary', use_container_width=True)
+    if back_button:
+        st.session_state.demo_page = "choose_spirit"
+        st.experimental_rerun()
 
 
 
