@@ -47,6 +47,21 @@ def init_inventory_session_variables():
         if var not in st.session_state:
             st.session_state[var] = default_value
 
+def reset_inventory_session_variables():
+    # Session state variables and their default values
+    session_vars = [
+        'image_generated', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients'
+    ]
+    default_values = [
+        False, '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], []
+    ]
+
+    # Reset session state variables to their default values
+    for var, default_value in zip(session_vars, default_values):
+        st.session_state[var] = default_value
+
+
 init_inventory_session_variables()
 
 # We want to create a parser object to parse the estimated costs of the non-inventory ingredients into the variables we want using Pydantic
@@ -453,6 +468,7 @@ def display_cost():
     back_button = st.button('Create another recipe', type = 'primary', use_container_width=True)
     if back_button:
         st.session_state.demo_page = "choose_spirit"
+        reset_inventory_session_variables()
         st.experimental_rerun()
 
 
