@@ -14,10 +14,10 @@ import pandas as pd
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients'
     ]
     default_values = [
-        'get_cocktail_info', '', '', '', None, [], '', False
+        'get_cocktail_info', '', '', '', None, [], '', False, []
     ]
 
     for var, default_value in zip(session_vars, default_values):
