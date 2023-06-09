@@ -289,7 +289,7 @@ def create_cocktail():
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
     cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
     # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
-    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'American',\
+    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'Fresh Northern Californian', 'American',\
                             'Mexican', 'Italian', 'French', 'Chinese', 'Japanese', 'Thai', 'Indian', 'Greek', 'Spanish', 'Korean', 'Vietnamese',\
                             'Mediterranean', 'Middle Eastern', 'Caribbean', 'British', 'German', 'Irish', 'African', 'Moroccan', 'Nordic', 'Eastern European',\
                             'Jewish', 'South American', 'Central American', 'Australian', 'New Zealand', 'Pacific Islands', 'Canadian', 'Other'])
