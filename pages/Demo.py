@@ -230,11 +230,7 @@ async def upload_inventory():
 # and the ability to let the user interact with it and select the spirit from their inventory
 def choose_spirit():
     # Set the page title
-    st.markdown('''
-    <div style = text-align:center>
-    <h3>Select the spirit you want to use in your cocktail</h3>
-    </div>
-    ''', unsafe_allow_html=True)
+    st.markdown("Choose your spirit below")
 
     edit_df = st.data_editor(
         st.session_state.df,
