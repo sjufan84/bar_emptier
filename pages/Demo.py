@@ -232,7 +232,7 @@ def choose_spirit():
     # Set the page title
     st.markdown('''
     <div style = text-align:center>
-    <h3 style = "color: black;">Select the spirit you want to use in your cocktail</h3>
+    <h3>Select the spirit you want to use in your cocktail</h3>
     </div>
     ''', unsafe_allow_html=True)
 
