@@ -9,7 +9,6 @@
 # Importing the necessary libraries
 import streamlit as st
 import pandas as pd
-import numpy as np
 from utils.inventory_functions import process_file
 from utils.image_utils import generate_image
 from utils.cocktail_functions import get_inventory_cocktail_recipe
@@ -17,12 +16,27 @@ import asyncio
 from streamlit_extras.switch_page_button import switch_page
 from langchain.output_parsers import PydanticOutputParser, RetryWithErrorOutputParser
 from pydantic import BaseModel, Field
+from langchain.chat_models import ChatOpenAI
+from langchain.agents import create_csv_agent, AgentType
+from langchain.prompts import (
+    ChatPromptTemplate,
+    PromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate
+    )
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+)
 from typing import List
-import re
 import os
 from dotenv import load_dotenv
 import openai
 import requests
+from utils.training_utils import generate_training_guide
+from typing import Union, List
 
 load_dotenv()
 
@@ -37,10 +51,10 @@ def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
         'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'demo_page', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
-                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients'
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide'
     ]
     default_values = [
-        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], []
+        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], ""
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -51,10 +65,10 @@ def reset_inventory_session_variables():
     # Session state variables and their default values
     session_vars = [
         'image_generated', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
-                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients'
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide'
     ]
     default_values = [
-        False, '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], []
+        False, '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], ""
     ]
 
     # Reset session state variables to their default values
@@ -67,6 +81,27 @@ init_inventory_session_variables()
 # We want to create a parser object to parse the estimated costs of the non-inventory ingredients into the variables we want using Pydantic
 class CostEstimate(BaseModel):
     total_ni_cost: float = Field(description="The sum of the total cost of the ingredients in the cocktail.")
+
+
+# Create a new Pydantic parser object to parse the cost of the cocktail
+class CocktailCost(BaseModel):
+    # The model will return the names of the spirits and the total cost of the amount
+    # of the spirits from our inventory in the cocktail.  We want the model to return
+    # the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
+    # for each spirit in the cocktail.
+
+    # Create a union of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
+    spirit_name: str = Field(description="The name of the spirit in the cocktail.")
+    amount: float = Field(description="The amount of the spirit in the cocktail.")
+    cost: float = Field(description="The cost of the amount of the spirit in the cocktail.")
+
+    # Create a list of the union of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
+    spirit_name_amount_cost: List[Union[spirit_name, amount, cost]] = Field(description="A list of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail.")
+
+
+# Create the parser object for the cost of the cocktail
+cocktail_cost_parser = PydanticOutputParser(pydantic_object = CocktailCost)
+
     
 # Create the parser object for the estimated cost of the non-inventory ingredients
 cost_parser = PydanticOutputParser(pydantic_object = CostEstimate)
@@ -145,9 +180,49 @@ def estimate_cost_of_non_inventory_items(ingredients):
             st.session_state.total_ni_cost = parsed_reponse.total_ni_cost
 
 
+    
+
             
     return response
 
+# Define a function to use the csv agent to retrieve the cost of the ingredients in the cocktail
+def get_cost_of_ingredients_in_cocktail():
+    # Create a list of the ingredients and amounts
+    st.session_state.inventory_ingredients = list(set(st.session_state.inventory_ingredients))
+    # The amounts are the first value in the tuple, so we need to get the first value in the tuple
+    amounts = [amount[0] for amount in st.session_state.inventory_ingredients]
+    # The ingredients are the second value in the tuple, so we need to get the second value in the tuple
+    ingredients = [ingredient[1] for ingredient in st.session_state.inventory_ingredients]
+    # Create a string of the ingredients and amounts
+    ingredients_string = ""
+    for ingredient, amount in zip(ingredients, amounts):
+        ingredients_string += f"{amount} oz {ingredient}, "
+
+    # Create the prompt templates to pass to the csv agent
+    system_prompt = PromptTemplate(
+                    template = "You are a helpful bar manager who is helping the user cost out recipes by using their\
+                        using the {ingredients} in the cocktail and the inventory as reference.  Return the recipe cost\
+                        in the following format: {format_instructions}",
+                    input_variables = ["ingredients"],
+                    partial_variables=cocktail_cost_parser.get_format_instructions(),
+    )
+    system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
+
+    human_template = "Please cost out the recipe by using the {ingredients} in the cocktail and the inventory as reference."
+    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+
+    chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+    messages = chat_prompt.format_prompt(ingredients = ingredients_string).to_messages()
+
+    # Call the csv agent
+    llm = ChatOpenAI(model_name='gpt-3.5-turbo-0613', temperature=0, verbose=True)
+    agent = create_csv_agent(llm=llm, path="inventory.csv", verbose=True, agent_type=AgentType.OPENAI_FUNCTIONS,)
+    response = agent.run(messages)
+
+    # Parse the response
+    parsed_response = cocktail_cost_parser.parse(response)
+
+    # Return the total cost of the cocktail
 # Define a function to cost out the recipe
 def cost_out_recipe():
 
@@ -219,6 +294,7 @@ async def upload_inventory():
                 # Use the await keyword to wait for the file to be processed
                 st.session_state.df = await process_file(uploaded_file)
                 # Insert a "Use in Cocktail" column as the first column and set it to False for all rows
+                st.session_state.is_demo = True
                 st.session_state.df.insert(0, "Use in Cocktail", False)
                 st.session_state.demo_page = "choose_spirit"
                 st.experimental_rerun()
@@ -230,7 +306,15 @@ async def upload_inventory():
 # and the ability to let the user interact with it and select the spirit from their inventory
 def choose_spirit():
     # Set the page title
-    st.markdown("Choose your spirit below")
+    if st.session_state.is_demo == True:
+        st.markdown("Choose your spirit below")
+    else:
+        st.markdown('**Select the spirit from the sample inventory below\
+                    that you are trying to use up. Besides the primary spirit you select,\
+                    the model will prioritize other items already in your inventory to minimize\
+                    the need to bring in outside liquors.**')
+        
+    st.text("")
 
     edit_df = st.data_editor(
         st.session_state.df,
@@ -245,9 +329,10 @@ def choose_spirit():
     hide_index=True,
     key="data_editor"
 )
-    # Create a button to display the 'data_editor' session_state variable
-    # This will allow us to see the changes the user makes to the dataframe
-    # and will allow us to use the data to create the cocktail
+    # Let the user know that they can edit the values in the dataframe before submitting
+    st.warning("**You can edit the values in the inventory to experiment, including the\
+                   spirit names as long as it is in the same format and is a valid liquor.\
+               To sort the values, click on the column name.**")
     
     # Check to make sure only one of the "Use in Cocktail" checkboxes is checked, otherwise display an error message
     if edit_df['Use in Cocktail'].sum() == 1:
@@ -309,6 +394,14 @@ def display_recipe():
     <hr>    
     </div>''', unsafe_allow_html=True)
     # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
+    # Create a button to submit the recipe and generate a training guide
+    get_training_guide_button = st.button(label='Get a training guide for this recipe!', use_container_width=True, type = 'primary')
+    if get_training_guide_button:   
+        with st.spinner('Generating your training guide.  This may take a minute...'):
+            st.session_state.training_guide = generate_training_guide(st.session_state.recipe)
+        # Once the training guide is generated, display the training guide using st.write
+        st.write(st.session_state.training_guide)
+
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
         # Display the recipe name

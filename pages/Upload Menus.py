@@ -29,9 +29,9 @@ def upload_menus():
     # Create the header
     st.markdown('##### Upload your menu files for additional context when creating your cocktails.')
                 
-    st.success('**There are two options for uploading files: either upload a food menu file (or files) or upload a cocktail menu file (or files).\
+    st.success('**There are two options for uploading files: either upload a food menu file (or files) and / or upload a cocktail menu file (or files).\
                 The model will then take these into account when creating your cocktail to ensure it fits into your menu theme\
-                and is not too similar to any of the other cocktails on your menu.  Files can be in the form of a pdf, txt, or even a jpeg or png.\
+                and is not too similar to any of the other drinks on your menu.**\n\n**Files can be in the form of a pdf, txt, or even a jpeg or png.\
                 The text can be extracted from pictures of menus as long as the picture is clear enough and well lit.**')
     # Create a space in between the header and the uploaders
     st.text('')

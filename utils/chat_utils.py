@@ -229,4 +229,47 @@ def get_general_bartender_response(question):
     
         return response
 
+def get_training_bartender_response(question, recipe, guide):
+    # Check to see if there is an inventory in the session state
+    messages = [
+    {
+        "role": "system",
+        "content": f"You are a master mixologist who has provided a recipe {recipe} for the user and a training guide {guide} about\
+            which they would like to ask some follow up questions.  The conversation you have had so far is {st.session_state.history.messages}.\
+            Please respond as a friendly bartender to help them with their questions."
+    },
+    {
+        "role": "user",
+        "content": f"Thanks for the recipe and the training guide!  I need to ask you a follow up question {question}."
+    },
+    ]
+
+    # Use the OpenAI API to generate a recipe
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages = messages,
+            max_tokens=750,
+            frequency_penalty=0.5,
+            presence_penalty=0.75,
+            temperature=1,
+            n=1
+        )
+        st.session_state.response = response
+        response = response.choices[0].message.content
+
+    except:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-0301",
+            messages = messages,
+            max_tokens=500,
+            frequency_penalty=0.2,
+            temperature = 1, 
+            n=1, 
+            presence_penalty=0.2,
+        )
+        st.session_state.response = response
+        response = response.choices[0].message.content
+
+    return response
 

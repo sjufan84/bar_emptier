@@ -9,6 +9,7 @@ import openai
 from google.oauth2 import service_account
 from spellchecker import SpellChecker
 
+
 # Set your API keys
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")

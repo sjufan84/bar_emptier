@@ -8,7 +8,6 @@ from streamlit_extras.switch_page_button import switch_page
 from utils.image_utils import generate_image
 from streamlit import components
 from PIL import Image
-import pandas as pd
 
 # Initialize the session state
 def init_cocktail_session_variables():
