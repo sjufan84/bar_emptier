@@ -23,6 +23,17 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
+class CocktailIngredient:
+    def __init__(self, name, amount, unit):
+        self.name = name
+        self.amount = amount
+        self.unit = unit
+
+class CocktailIngredients(BaseModel):
+    ingredient_names: List[str] = Field(description="A list of the names of the ingredients in the cocktail.")
+    ingredient_amounts: List[float] = Field(description="A list of the amounts of the ingredients in the cocktail.")
+    ingredient_units: List[str] = Field(description="A list of the units of the ingredients in the cocktail.")
+
 # Initialize the session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -59,17 +70,9 @@ if "other_ingredients" not in st.session_state:
 # We want to create a parser object to parse the recipe into the variables we want using Pydantic
 class CocktailRecipe(BaseModel):
     name: str = Field(description="Name of the cocktail recipe")
-    ingredients: List[str] = Field(description="List of ingredients in the cocktail")
-    instructions: List[str] = Field(description="Instructions for preparing the cocktail")
-    garnish: str = Field(description="Garnish for the cocktail")
-    glass: str = Field(description="Glass to serve the cocktail in")
-    flavor_profile: str = Field(description="Flavor profile of the cocktail")
-
-# We will create a separate parser for inventory cocktails
-class InventoryCocktailRecipe(BaseModel):
-    name: str = Field(description="Name of the cocktail recipe")
-    ingredients: List[tuple] = Field(description="List of tuples of the ingredients in the cocktail with the amounts as a float and the names of the ingredients as a string.")
-    # ingredient_amounts: List[float] = Field(description="Amounts of each ingredient in the cocktail")
+    ingredient_names: List[str] = Field(description="A list of the names of the ingredients in the cocktail.")
+    ingredient_amounts: List[float or int] = Field(description="A list of the amounts of the ingredients in the cocktail.")
+    ingredient_units: List[str] = Field(description="A list of the units of the ingredients in the cocktail.")
     instructions: List[str] = Field(description="Instructions for preparing the cocktail")
     garnish: str = Field(description="Garnish for the cocktail")
     glass: str = Field(description="Glass to serve the cocktail in")
@@ -77,57 +80,23 @@ class InventoryCocktailRecipe(BaseModel):
 
 # Instantiate the parser objects
 parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
-inventory_parser = PydanticOutputParser(pydantic_object=InventoryCocktailRecipe)
 
-prompt = PromptTemplate(
-    input_variables=['messages'],
-    output_parser = inventory_parser,
-    template = """
-    You are a master mixologist creating cocktails for the user.  Your prompt messages are {messages}.
-    """
-)
-
-prompt.format(messages=st.session_state.messages)
-
-chain = LLMChain(
-    verbose=True,
-    llm = ChatOpenAI(
-        model_name="gpt-3.5-turbo",
-        temperature=0),
-    prompt = prompt,
-)
         
-
-
-
-
-
 # Define a function to allow the user to be able to send menu text to the API and build a recipe\
 # based on the menu text
 
 def text_cocktail_recipe(recipe: CocktailRecipe) -> str:
-    ingredients = "\n".join(recipe.ingredients)
+    # ingredients = "\n".join(recipe.ingredients)
     instructions = "\n".join(recipe.instructions)
     formatted_recipe = (
         f"Recipe Name: {recipe.name}\n\n"
-        f"Ingredients:\n{ingredients}\n\n"
+        #f"Ingredients:\n{ingredients}\n\n"
         f"Instructions:\n{instructions}\n\n"
         f"Garnish: {recipe.garnish}\n\n"
         f"Glass: {recipe.glass}"
     )
     return formatted_recipe
 
-def text_inventory_cocktail_recipe(recipe: InventoryCocktailRecipe) -> str:
-    instructions = "\n".join(recipe.instructions)
-    ingredients = "\n".join([f"{ingredient[0]} {ingredient[1]}" for ingredient in recipe.ingredients])
-    formatted_recipe = (
-        f"Recipe Name: {recipe.name}\n\n"
-        f"Ingredients:\n{ingredients}\n\n"
-        f"Instructions:\n{instructions}\n\n"
-        f"Garnish: {recipe.garnish}\n\n"
-        f"Glass: {recipe.glass}"
-    )
-    return formatted_recipe
 
 def clean_output(output):
     # Remove trailing commas in the JSON string
@@ -194,7 +163,20 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
         st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
         st.session_state.parsed_recipe = parsed_recipe
         st.session_state.cocktail_name = parsed_recipe.name
-        st.session_state.ingredients = parsed_recipe.ingredients
+        # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+        st.session_state.ingredients = [
+            CocktailIngredient(
+                name=name,
+                amount=amount,
+                unit=unit,
+            )
+            for name, amount, unit in zip(
+                parsed_recipe.ingredient_names,
+                parsed_recipe.ingredient_amounts,
+                parsed_recipe.ingredient_units,
+            )
+        ]
+
         st.session_state.instructions = parsed_recipe.instructions
         st.session_state.garnish = parsed_recipe.garnish
         st.session_state.glass = parsed_recipe.glass
@@ -220,7 +202,20 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
             st.session_state.parsed_recipe = parsed_recipe
             st.session_state.cocktail_name = parsed_recipe.name
-            st.session_state.ingredients = parsed_recipe.ingredients
+            # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+            st.session_state.ingredients = [
+                CocktailIngredient(
+                    name=name,
+                    amount=amount,
+                    unit=unit,
+                )
+                for name, amount, unit in zip(
+                    parsed_recipe.ingredient_names,
+                    parsed_recipe.ingredient_amounts,
+                    parsed_recipe.ingredient_units,
+                )
+            ]
+
             st.session_state.instructions = parsed_recipe.instructions
             st.session_state.garnish = parsed_recipe.garnish
             st.session_state.glass = parsed_recipe.glass
@@ -240,20 +235,33 @@ def get_menu_cocktail_recipe(liquor, cocktail_type, theme):
             n=1,
         )
 
-        recipe = response.choices[0].message.content
-        st.session_state.recipe = recipe
-        st.session_state.response = response
-        parsed_recipe = parser.parse(recipe)
-        st.session_state.parsed_recipe = parsed_recipe
-        st.session_state.cocktail_name = parsed_recipe.name
-        st.session_state.ingredients = parsed_recipe.ingredients
-        st.session_state.instructions = parsed_recipe.instructions
-        st.session_state.garnish = parsed_recipe.garnish
-        st.session_state.glass = parsed_recipe.glass
-        st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
-        st.session_state.flavor_profile = parsed_recipe.flavor_profile
+            recipe = response.choices[0].message.content
+            st.session_state.recipe = recipe
+            st.session_state.response = response
+            parsed_recipe = parser.parse(recipe)
+            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
+            st.session_state.parsed_recipe = parsed_recipe
+            st.session_state.cocktail_name = parsed_recipe.name
+            # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+            st.session_state.ingredients = [
+                CocktailIngredient(
+                    name=name,
+                    amount=amount,
+                    unit=unit,
+                )
+                for name, amount, unit in zip(
+                    parsed_recipe.ingredient_names,
+                    parsed_recipe.ingredient_amounts,
+                    parsed_recipe.ingredient_units,
+                )
+            ]
 
-            
+            st.session_state.instructions = parsed_recipe.instructions
+            st.session_state.garnish = parsed_recipe.garnish
+            st.session_state.glass = parsed_recipe.glass
+            st.session_state.flavor_profile = parsed_recipe.flavor_profile
+
+                
 
     # Return the recipe
     return recipe
@@ -339,7 +347,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
                                 Please be as specific as possible with your instructions."
     },
     {
-        "role": "user", "content": f"Please use the following format:\n{inventory_parser.get_format_instructions()}\n"
+        "role": "user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n"
     }
     ]
 
@@ -348,7 +356,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
     # Call the OpenAI API
     try:
         response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo-16k-0613",
         messages=messages,
         max_tokens=1000,
         frequency_penalty=0.5,
@@ -360,40 +368,37 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
 
         # Clean and parse the recipe
         recipe = response.choices[0].message.content
-        clean_recipe = clean_output(recipe)
         try:
-            parsed_recipe = inventory_parser.parse(clean_recipe)
             st.session_state.recipe = recipe
-            st.session_state.response = response
-            parsed_recipe = inventory_parser.parse(recipe)
-            st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+            parsed_recipe = parser.parse(recipe)
+            st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
             st.session_state.parsed_recipe = parsed_recipe
             st.session_state.cocktail_name = parsed_recipe.name
+            # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+            st.session_state.ingredients = [
+                CocktailIngredient(
+                    name=name,
+                    amount=amount,
+                    unit=unit,
+                )
+                for name, amount, unit in zip(
+                    parsed_recipe.ingredient_names,
+                    parsed_recipe.ingredient_amounts,
+                    parsed_recipe.ingredient_units,
+                )
+            ]
+
             st.session_state.instructions = parsed_recipe.instructions
             st.session_state.garnish = parsed_recipe.garnish
             st.session_state.glass = parsed_recipe.glass
             st.session_state.flavor_profile = parsed_recipe.flavor_profile
-            st.session_state.ingredients = parsed_recipe.ingredients
         except Exception as e:
-            pass
-            with st.spinner("Error parsing recipe. Retrying..."):
-                parsed_recipe = inventory_parser.parse(clean_recipe)
-                st.session_state.recipe = recipe
-                st.session_state.response = response
-                parsed_recipe = inventory_parser.parse(recipe)
-                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
-                st.session_state.parsed_recipe = parsed_recipe
-                st.session_state.cocktail_name = parsed_recipe.name
-                st.session_state.instructions = parsed_recipe.instructions
-                st.session_state.garnish = parsed_recipe.garnish
-                st.session_state.glass = parsed_recipe.glass
-                st.session_state.flavor_profile = parsed_recipe.flavor_profile
-                st.session_state.ingredients = parsed_recipe.ingredients
+            st.write(e)
 
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
             response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
             messages=messages,
             max_tokens=1000,
             frequency_penalty=0.5,
@@ -404,23 +409,35 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             )
 
             recipe = response.choices[0].message.content
-            clean_recipe = clean_output(recipe)
             try:
-                parsed_recipe = inventory_parser.parse(clean_recipe)
                 st.session_state.recipe = recipe
                 st.session_state.response = response
-                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                parsed_recipe = parser.parse(recipe)
+                st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
                 st.session_state.parsed_recipe = parsed_recipe
                 st.session_state.cocktail_name = parsed_recipe.name
+                # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+                st.session_state.ingredients = [
+                    CocktailIngredient(
+                        name=name,
+                        amount=amount,
+                        unit=unit,
+                    )
+                    for name, amount, unit in zip(
+                        parsed_recipe.ingredient_names,
+                        parsed_recipe.ingredient_amounts,
+                        parsed_recipe.ingredient_units,
+                    )
+                ]
+
                 st.session_state.instructions = parsed_recipe.instructions
                 st.session_state.garnish = parsed_recipe.garnish
                 st.session_state.glass = parsed_recipe.glass
                 st.session_state.flavor_profile = parsed_recipe.flavor_profile
-                st.session_state.ingredients = parsed_recipe.ingredients
             except Exception as e:
                 with st.spinner("Error parsing recipe. Retrying..."):
-                    parsed_recipe = inventory_parser.parse(recipe)
-                    st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                    parsed_recipe = parser.parse(recipe)
+                    st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
                     st.session_state.parsed_recipe = parsed_recipe
                     st.session_state.cocktail_name = parsed_recipe.name
                     st.session_state.instructions = parsed_recipe.instructions
@@ -434,7 +451,7 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
 
         except (requests.exceptions.RequestException, openai.error.APIError):
             response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
+            model="gpt-3.5-turbo-16k-0613",
             messages=messages,
             max_tokens=1000,
             frequency_penalty=0.5,
@@ -442,39 +459,37 @@ def get_inventory_cocktail_recipe(liquor, cocktail_type, cuisine, theme):
             temperature=1,
             top_p=0.9,
             n=1,
+            
         )
 
             recipe = response.choices[0].message.content
-            clean_recipe = clean_output(recipe)
             try:
-                parsed_recipe = inventory_parser.parse(clean_recipe)
                 st.session_state.recipe = recipe
                 st.session_state.response = response
-                parsed_recipe = inventory_parser.parse(recipe)
-                st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
+                parsed_recipe = parser.parse(recipe)
+                st.session_state.recipe_text = text_cocktail_recipe(parsed_recipe)
                 st.session_state.parsed_recipe = parsed_recipe
                 st.session_state.cocktail_name = parsed_recipe.name
+                # Create a list of the ingredients in the recipe as a list of CocktailIngredient objects
+                st.session_state.ingredients = [
+                    CocktailIngredient(
+                        name=name,
+                        amount=amount,
+                        unit=unit,
+                    )
+                    for name, amount, unit in zip(
+                        parsed_recipe.ingredient_names,
+                        parsed_recipe.ingredient_amounts,
+                        parsed_recipe.ingredient_units,
+                    )
+                ]
+
                 st.session_state.instructions = parsed_recipe.instructions
                 st.session_state.garnish = parsed_recipe.garnish
                 st.session_state.glass = parsed_recipe.glass
                 st.session_state.flavor_profile = parsed_recipe.flavor_profile
-                st.session_state.ingredients = parsed_recipe.ingredients
             except Exception as e:
-                pass
-                with st.spinner("Error parsing recipe. Retrying..."):
-                    parsed_recipe = RetryWithErrorOutputParser(parser = inventory_parser, retry_chain=chain).parse(clean_recipe)
-                    st.session_state.recipe = recipe
-                    st.session_state.response = response
-                    parsed_recipe = inventory_parser.parse(recipe)
-                    st.session_state.recipe_text = text_inventory_cocktail_recipe(parsed_recipe)
-                    st.session_state.parsed_recipe = parsed_recipe
-                    st.session_state.cocktail_name = parsed_recipe.name
-                    st.session_state.instructions = parsed_recipe.instructions
-                    st.session_state.garnish = parsed_recipe.garnish
-                    st.session_state.glass = parsed_recipe.glass
-                    st.session_state.flavor_profile = parsed_recipe.flavor_profile
-                    st.session_state.ingredients = parsed_recipe.ingredients
-
+                st.write(e)
 
             
     return recipe

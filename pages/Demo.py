@@ -14,29 +14,17 @@ from utils.image_utils import generate_image
 from utils.cocktail_functions import get_inventory_cocktail_recipe
 import asyncio
 from streamlit_extras.switch_page_button import switch_page
-from langchain.output_parsers import PydanticOutputParser, RetryWithErrorOutputParser
+from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
-from langchain.chat_models import ChatOpenAI
-from langchain.agents import create_csv_agent, AgentType
-from langchain.prompts import (
-    ChatPromptTemplate,
-    PromptTemplate,
-    SystemMessagePromptTemplate,
-    AIMessagePromptTemplate,
-    HumanMessagePromptTemplate
-    )
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage,
-)
 from typing import List
+
+
+
 import os
 from dotenv import load_dotenv
 import openai
 import requests
 from utils.training_utils import generate_training_guide
-from typing import Union, List
 
 load_dotenv()
 
@@ -51,10 +39,10 @@ def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
         'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'demo_page', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
-                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide'
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide', 'ingredients'
     ]
     default_values = [
-        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], ""
+        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], "", []
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -83,24 +71,43 @@ class CostEstimate(BaseModel):
     total_ni_cost: float = Field(description="The sum of the total cost of the ingredients in the cocktail.")
 
 
+
+
 # Create a new Pydantic parser object to parse the cost of the cocktail
-class CocktailCost(BaseModel):
+#class CocktailCost(BaseModel):
     # The model will return the names of the spirits and the total cost of the amount
     # of the spirits from our inventory in the cocktail.  We want the model to return
     # the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
     # for each spirit in the cocktail.
 
     # Create a union of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
-    spirit_name: str = Field(description="The name of the spirit in the cocktail.")
-    amount: float = Field(description="The amount of the spirit in the cocktail.")
-    cost: float = Field(description="The cost of the amount of the spirit in the cocktail.")
+    #spirit_name: str = Field(description="The name of the spirit in the cocktail.")
+    #amount: float = Field(description="The amount of the spirit in the cocktail.")
+    #cost: float = Field(description="The cost of the amount of the spirit in the cocktail.")
 
     # Create a list of the union of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail
-    spirit_name_amount_cost: List[Union[spirit_name, amount, cost]] = Field(description="A list of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail.")
+    #spirit_name_amount_cost: List[Union[spirit_name, amount, cost]] = Field(description="A list of the spirit name, the amount, and the cost of the amount of the spirit in the cocktail.")
 
+def calculate_inventory_item_cost(ingredients, amounts, units):
+    # Create a list to hold the cost of each ingredient
+    cost = []
+    # Create a list of the name and amounts of the inventory ingredients where the unit in the recipe is "oz"
+    inventory_ingredients = [ingredient for ingredient, unit in zip(ingredients, units) if unit == "oz"]
+    # Loop through the inventory_ingredients and calculate the cost of each ingredient
+    for ingredient in inventory_ingredients:
+        # Locate the value in the "Cost per oz" column that corresponds to the ingredient -- make sure account for any capitalization issues
+        #ingredient_cost = st.session_state.df.loc[st.session_state.df["Ingredient"] == ingredient, "Cost per oz"].values[0]
+        ingredient_cost = st.session_state.df.loc[st.session_state.df["Ingredient"].str.lower() == ingredient.lower(), "Cost per oz"].values[0]
 
+        # Append the cost of the ingredient to the cost list
+        cost.append(ingredient_cost)
+    
+    # Calculate the cost of the ingredients by multiplying the cost of each ingredient by the amount of the ingredient in the cocktail if the ingredient is in the inventory
+    cost = [ingredient_cost * amount for ingredient_cost, amount in zip(cost, amounts) if ingredient_cost != 0]
+    
+    
 # Create the parser object for the cost of the cocktail
-cocktail_cost_parser = PydanticOutputParser(pydantic_object = CocktailCost)
+#cocktail_cost_parser = PydanticOutputParser(pydantic_object = CocktailCost)
 
     
 # Create the parser object for the estimated cost of the non-inventory ingredients
@@ -128,7 +135,7 @@ def estimate_cost_of_non_inventory_items(ingredients):
     # Call the OpenAI API
     try:
         response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
+        model="gpt-3.5-turbo-16k-0613",
         messages=messages,
         max_tokens=1000,
         frequency_penalty=0.5,
@@ -146,7 +153,7 @@ def estimate_cost_of_non_inventory_items(ingredients):
     except (requests.exceptions.RequestException, openai.error.APIError):
         try:
             response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
             messages=messages,
             max_tokens=1000,
             frequency_penalty=0.5,
@@ -184,93 +191,6 @@ def estimate_cost_of_non_inventory_items(ingredients):
 
             
     return response
-
-# Define a function to use the csv agent to retrieve the cost of the ingredients in the cocktail
-def get_cost_of_ingredients_in_cocktail():
-    # Create a list of the ingredients and amounts
-    st.session_state.inventory_ingredients = list(set(st.session_state.inventory_ingredients))
-    # The amounts are the first value in the tuple, so we need to get the first value in the tuple
-    amounts = [amount[0] for amount in st.session_state.inventory_ingredients]
-    # The ingredients are the second value in the tuple, so we need to get the second value in the tuple
-    ingredients = [ingredient[1] for ingredient in st.session_state.inventory_ingredients]
-    # Create a string of the ingredients and amounts
-    ingredients_string = ""
-    for ingredient, amount in zip(ingredients, amounts):
-        ingredients_string += f"{amount} oz {ingredient}, "
-
-    # Create the prompt templates to pass to the csv agent
-    system_prompt = PromptTemplate(
-                    template = "You are a helpful bar manager who is helping the user cost out recipes by using their\
-                        using the {ingredients} in the cocktail and the inventory as reference.  Return the recipe cost\
-                        in the following format: {format_instructions}",
-                    input_variables = ["ingredients"],
-                    partial_variables=cocktail_cost_parser.get_format_instructions(),
-    )
-    system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
-
-    human_template = "Please cost out the recipe by using the {ingredients} in the cocktail and the inventory as reference."
-    human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-
-    chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
-    messages = chat_prompt.format_prompt(ingredients = ingredients_string).to_messages()
-
-    # Call the csv agent
-    llm = ChatOpenAI(model_name='gpt-3.5-turbo-0613', temperature=0, verbose=True)
-    agent = create_csv_agent(llm=llm, path="inventory.csv", verbose=True, agent_type=AgentType.OPENAI_FUNCTIONS,)
-    response = agent.run(messages)
-
-    # Parse the response
-    parsed_response = cocktail_cost_parser.parse(response)
-
-    # Return the total cost of the cocktail
-# Define a function to cost out the recipe
-def cost_out_recipe():
-
-    # Muliply the cost of each ingredient by the value in the "Cost per oz" column in the dataframe and save it to a new list of tuples
-    ingredients_cost = []
-    total_cost = 0
-    # Remove any duplicates from the inventory_ingredients session state variable
-    st.session_state.inventory_ingredients = list(set(st.session_state.inventory_ingredients))
-    # Remove any duplicates from the ni_ingredients session state variable
-    st.session_state.ni_ingredients = list(set(st.session_state.ni_ingredients))
-
-    # Get the cost of the inventory ingredients
-    for ingredient in st.session_state.inventory_ingredients:
-        st.write(ingredient)
-        ingredient_cost_per_oz = st.session_state.df.loc[st.session_state.df['Name'].str.lower() == ingredient[1].lower(), 'Cost per oz'].values[0]
-        recipe_ingredient_cost = ingredient_cost_per_oz * ingredient[0]
-        ingredients_cost.append((f'{ingredient[0]} oz {ingredient[1]}', recipe_ingredient_cost))
-        total_cost += recipe_ingredient_cost
-    # Convert the second value of the tuple to a float with two decimal places and a dollar sign
-    for i in range(len(ingredients_cost)):
-        ingredients_cost[i] = (ingredients_cost[i][0], f'{round(ingredients_cost[i][1], 2)}')
-    
-    # Call the function to get the cost of the non-inventory ingredients
-    estimate_cost_of_non_inventory_items(st.session_state.ni_ingredients)
-    # Append the cost of the non-inventory ingredients to the list of tuples
-    ingredients_cost.append((f'Estimated total cost of other ingredients:', f'{round(st.session_state.total_ni_cost, 2)}'))
-
-    # Add the cost of the non-inventory ingredients to the total cost
-    total_cost += st.session_state.total_ni_cost
-
-    # Get the total number of drinks we can make with the selected spirit by dividing the total amount of the spirit in the "Total amount (oz)" column by the amount of the spirit in the recipe
-    st.session_state.num_drinks = st.session_state.df.loc[st.session_state.df['Name'].str.lower() == st.session_state.chosen_spirit.lower(), 'Total Amount (oz)'].values[0] / st.session_state.ingredients[0][0]
-    
-    # Round the number of drinks to the nearest integer
-    st.session_state.num_drinks = round(st.session_state.num_drinks)
-    
-    # Append the total cost of the recipe to the list of tuples
-    ingredients_cost.append((f'Total cost of recipe:', f'{round(total_cost, 2)}'))
-
-    # Set the total_cost session state variable to the total cost of the recipe
-    st.session_state.total_cost = total_cost
-
-    # Create a "total_drinks_cost" that is the total cost of the recipe * the number of drinks we can make with the selected spirit
-    total_drinks_cost = total_cost * st.session_state.num_drinks
-    st.session_state.total_drinks_cost = total_drinks_cost
-    
-    # Return the list of tuples
-    return ingredients_cost
     
 
 # Create the function to allow the user to upload their inventory.  We will borrow this from the "Inventory Cocktails" page
@@ -411,20 +331,19 @@ def display_recipe():
         
         # Check to see if there are any non-alphanumeric characters in the ingredient name and if so, remove them
         for ingredient in st.session_state.ingredients:
-            ingredient_name = ingredient[1].replace('[', '').replace(']', '').strip()
-            # Replace the 1st value in the ingredient tuple with the ingredient name
-            ingredient = (ingredient[0], ingredient_name)
+            ingredient_name = ingredient.name
+            ingredient_amount = ingredient.amount
+            ingredient_unit = ingredient.unit
 
             if ingredient_name.lower() in st.session_state.df['Name'].str.lower().values:
-                st.markdown(f'* <div style="color: red;">{ingredient[0]} oz {ingredient_name}</div>', unsafe_allow_html=True)
+                st.markdown(f'* <div style="color: red;">{ingredient_name}: {ingredient_amount} {ingredient_unit}</div>', unsafe_allow_html=True)
                 st.session_state['inventory_ingredients'].append(ingredient)
             else:
-                st.session_state['ni_ingredients'].append(ingredient)
-                # If the ingredient is not a float, display it without the oz
-                if type(ingredient[0]) != float:
-                    st.markdown(f'* {ingredient[0]} {ingredient_name}', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'* {ingredient[0]} oz {ingredient_name}', unsafe_allow_html=True)
+                st.markdown(f'* <div style="color: black;">{ingredient_name}: {ingredient_amount} {ingredient_unit}</div>', unsafe_allow_html=True)
+                st.session_state['ni_ingredients'].append(ingredient)   
+
+
+                
         # Create a key so the user can see what the colors mean
         st.markdown(f'<div style="color: red;">Note: If the color of the ingredient is red, it is from your inventory', unsafe_allow_html=True)
       

@@ -5,7 +5,7 @@ import streamlit as st
 # from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
 from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
 from streamlit_extras.switch_page_button import switch_page
-from utils.image_utils import generate_image
+from utils.image_utils import generate_image 
 from streamlit import components
 from PIL import Image
 
