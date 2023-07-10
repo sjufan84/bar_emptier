@@ -272,7 +272,7 @@ class RecipeService:
         messages = chat_prompt.format_prompt(liquor=liquor, theme=theme, cuisine=cuisine, cocktail_type=cocktail_type).to_messages()
 
         # Create a list of models to loop through in case one fails
-        models = ['gpt-4-0613', 'gpt-4', "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k"]
+        models = ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", 'gpt-4-0613', 'gpt-4',]
 
         # Loop through the models and try to generate the recipe
         for model in models:
@@ -323,7 +323,7 @@ class RecipeService:
         ]
 
         # Iterate through different models for fallback
-        for model in ["gpt-4-0613", "gpt-4", "gpt-3.5-turbo-16k-0613", 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo']:
+        for model in [ "gpt-3.5-turbo-16k-0613", 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo', "gpt-4-0613", "gpt-4",]:
             # Define the parameters for the API call
             params = {
                 "model": model,

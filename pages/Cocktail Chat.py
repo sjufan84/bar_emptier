@@ -81,15 +81,14 @@ def display_chat():
     recipe = recipe_service.load_recipe()
     chat_history = chat_service.chat_history
     
-
-    if len(chat_history) == 2 and st.session_state.context == Context.RECIPE:
+    if len(chat_history) == 1:
         initial_prompt = f"What questions can I answer about the {recipe.name}?" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
         message(initial_prompt, is_user=False, avatar_style = 'miniavs', seed='Spooky')
 
     chat_container = st.container()
     with chat_container:
         # Display the chat history
-        for i, chat_message in enumerate(chat_history[-2:]):
+        for i, chat_message in enumerate(chat_history[1:]):
             if chat_message['role'] == 'user':
                 message(chat_message['content'], is_user=True, key = f'user_message_{i}')
             elif chat_message['role'] == 'assistant':
@@ -113,9 +112,7 @@ def display_chat():
     # And return to the recipe creation page
     if create_new_recipe_button:
         # Reset the chat history and chat history dictionary
-        st.session_state.chat_history_dict = {}
-        st.session_state.chat_messages = []
-        st.session_state.history = None
+        chat_service.chat_history = None
         # Return to the recipe creation page
         st.session_state.bar_chat_page = 'get_cocktail_type'
         switch_page("Create Cocktails")

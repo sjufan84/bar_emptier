@@ -142,28 +142,6 @@ def get_cocktail_info():
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
-'''async def get_menu_cocktail_info():
-
-    # Build the form 
-
-    # Start by getting the input for the liquor that the user is trying to use up
-    liquor = st.text_input('What liquor are you trying to use up?')
-    # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
-    cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
-   
-    # Allow the user to enter a theme for the cocktail if they want
-    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)')
-
-    # Create the submit button
-    cocktail_submit_button = st.button(label='Create your cocktail!')
-    if cocktail_submit_button:
-        with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_menu_cocktail_recipe(liquor, cocktail_type, theme)
-            st.session_state.cocktail_page = "display_recipe"
-            st.experimental_rerun()'''
-
-
-
 def display_recipe():
     # Instantiate the RecipeService class
     recipe_service = RecipeService(session_id=st.session_state.session_id)
@@ -186,7 +164,8 @@ def display_recipe():
         # Convert the ingredients tuple into a list
         for ingredient in ingredients_list:
             # Check to see if the amount ends in a 0, if so, remove the decimal
-            if float(ingredient[1]) % 1 == 0:
+    
+            if type(ingredient) == float and float(ingredient[1]) % 1 == 0:
                 ingredient[1] = int(ingredient[1])
             st.markdown(f'{ingredient[1]} {ingredient[2]} {ingredient[0]}')
         # Display the recipe instructions
@@ -235,6 +214,8 @@ def display_recipe():
             # Clear the session state variables
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "get_cocktail_type"
+            # Clear the recipe and chat history
+            chat_service.chat_history = None
             recipe_service.recipe = None
             st.experimental_rerun()
             

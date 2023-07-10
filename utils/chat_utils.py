@@ -89,17 +89,23 @@ class ChatService:
                                     chat messages so far are {self.chat_history[1:]} 
                                     """
                                     }
-        else:
-            initial_message = {"role": "system", "content": f"You are a master mixologist answering\
-                                   a user's questions about bartending."}
-            
-        second_message = {"role": "system", "content": "Your chat messages so far are:"}
-        # Append the initial message to the chat history
-        self.chat_history.append(initial_message)
-        self.chat_history.append(second_message)
+            # Append the initial message to the chat history
+            self.chat_history = [initial_message]
 
-        # Save the chat history to redis
-        self.save_chat_history()
+            # Save the chat history to redis
+            self.save_chat_history()
+
+        elif context == Context.GENERAL_CHAT:
+            initial_message = {
+                "role": "system", "content": f"You are a master mixologist answering\
+                                   a user's questions about bartending.  Your chat messages so far are:\
+                                   {self.chat_history[1:]}"
+                                }
+            # Append the initial message to the chat history
+            self.chat_history = [initial_message]
+            
+            # Save the chat history to redis
+            self.save_chat_history()
 
         # Return the chat history
         return initial_message

@@ -184,6 +184,7 @@ def create_cocktail():
 def display_recipe():
     # Instantiate the RecipeService class
     recipe_service = RecipeService(session_id=st.session_state.session_id)
+    chat_service = ChatService(session_id=st.session_state.session_id)
     # Load the recipe
     recipe = recipe_service.load_recipe()
     # Create the header
@@ -258,9 +259,21 @@ def display_recipe():
             st.session_state.inventory_page = "display_cost"
             st.experimental_rerun()
 
+         # Create an option to get a new recipe
+        new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
+        if new_recipe_button:
+            # Clear the session state variables
+            st.session_state.image_generated = False
+            st.session_state.cocktail_page = "get_cocktail_type"
+            # Clear the recipe and chat history
+            chat_service.chat_history = None
+            recipe_service.recipe = None
+            st.experimental_rerun()
+
 # Define a function to display the cost of the recipe -- we will use the RecipeService class to do this
 # Create a function to display the cost of the recipe
 def display_cost(session_id : Optional[str] = None):
+    chat_service = ChatService(session_id=st.session_state.session_id)
     session_id = st.session_state.session_id
     recipe_service = RecipeService(session_id)
     recipe = recipe_service.load_recipe()
@@ -308,6 +321,17 @@ def display_cost(session_id : Optional[str] = None):
         # Display the profit
         st.write(f'The total profit for {st.session_state.total_drinks} drinks is ${total_profit:.2f}.')
         st.write(f'The profit per drink is ${profit_per_drink:.2f} or {(profit_per_drink / price) * 100:.2f}%.')
+
+         # Create an option to get a new recipe
+        new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
+        if new_recipe_button:
+            # Clear the session state variables
+            st.session_state.image_generated = False
+            st.session_state.cocktail_page = "get_cocktail_type"
+            # Clear the recipe and chat history
+            chat_service.chat_history = None
+            recipe_service.recipe = None
+            st.experimental_rerun()
 
     st.text("")
     st.text("")
