@@ -77,13 +77,14 @@ class InventoryService:
         
     # Define the function to process the file
     def process_and_format_file(self, uploaded_file):
-        if uploaded_file == './resources/Inventory.csv' or uploaded_file.name.lower().endswith('csv'):
+        if uploaded_file == None:
+            df = pd.read_csv('./resources/inventory.csv')
+        elif uploaded_file.name.lower().endswith('csv'):
             df = pd.read_csv(uploaded_file)
         elif uploaded_file.name.lower().endswith(('xlsx', 'xls')):
             df = pd.read_excel(uploaded_file, engine='openpyxl')
         else:
-            st.error('Invalid file type. Please upload a CSV or Excel file.')
-            return
+            raise ValueError('File must be a CSV or Excel file')
 
             
         # Convert the columns to match desired format

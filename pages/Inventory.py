@@ -53,7 +53,7 @@ def get_inventory_choice():
         else:
             # If the user chooses to use the default inventory, we will load the default inventory
             # from the resources folder
-            inventory_service.process_and_format_file(uploaded_file='../resources/inventory.csv')
+            inventory_service.process_and_format_file(uploaded_file=None)
             st.session_state.inventory_page = 'choose_spirit'
             st.experimental_rerun()
 
@@ -266,7 +266,6 @@ def display_cost(session_id : Optional[str] = None):
     recipe = recipe_service.load_recipe()
     inventory_service = InventoryService(session_id)
     inventory = inventory_service.load_inventory()
-    inventory_df = pd.DataFrame.from_dict(inventory, orient='columns')
     # Create two columns -- one two display the recipe text and the cost per recipe, the other to display the profit
     col1, col2 = st.columns(2, gap = 'medium')
     with col1:
