@@ -9,3 +9,4 @@ mysql-connector-python
 pdfplumber
 google-cloud-vision
 pyspellchecker
+redis-py
