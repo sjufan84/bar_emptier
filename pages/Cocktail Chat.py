@@ -78,9 +78,11 @@ def get_chat_choice():
 def display_chat():
     st.session_state.i += 1
     chat_service = ChatService(session_id=st.session_state.session_id)
+    st.write(chat_service.chat_history)
+    st.stop()
     chat_history = chat_service.chat_history
-    if len(chat_history) == 2:
-        initial_prompt = f"What questions can I answer about the {st.session_state.recipe_name}" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
+    if len(chat_history) == 2 and st.session_state.context == Context.RECIPE:
+        initial_prompt = f"What questions can I answer about the {chat_service.recipe}" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
         message(initial_prompt, is_user=False, avatar_style = 'miniavs', seed='Spooky')
 
     chat_container = st.container()

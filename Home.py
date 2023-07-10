@@ -16,7 +16,7 @@ def init_session_variables():
         
     ]
     default_values = [
-        'get_cocktail_info', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type', 'chat_choice', None
+        'get_cocktail_type', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type', 'chat_choice', None
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -25,7 +25,7 @@ def init_session_variables():
 
 # Reset the pages to their default values if someone returns to the home page
 def reset_pages():
-    st.session_state.cocktail_page = 'get_cocktail_info'
+    st.session_state.cocktail_page = 'get_cocktail_type'
     st.session_state.menu_page = "upload_menus"
     st.session_state.bar_chat_page = "chat_choice"
     st.session_state.inventory_page = "upload_inventory"
@@ -69,7 +69,7 @@ with col2:
         switch_page('Cocktail Chat')
         st.experimental_rerun()
 
-st.markdown('---')
+'''st.markdown('---')
 ## Offer the chance to incorporate inventory (**start out with a dummy inventory**) and menus (full on here)
 st.warning("##### For an even richer experience, upload your food and \ or existing drink\
            menus so the model will be able to take them into context when designing your cocktails.\
@@ -109,7 +109,7 @@ with inventory_column:
         # Set the proper session state and switch pages
         st.session_state.demo_page = "choose_spirit"
         switch_page("Demo")
-        st.experimental_rerun()
+        st.experimental_rerun()'''
     
     
 st.markdown('---')

@@ -7,6 +7,7 @@ import uuid
 from typing import Optional
 from enum import Enum
 from redis import Redis as RedisStore
+from utils.cocktail_functions import CocktailRecipe
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -31,7 +32,7 @@ class ChatMessage:
 
 # Define a class for the chat service -- this is the class we will use to track the chat history and save it to redis
 class ChatService:
-    def __init__(self, session_id : Optional[str] = None):
+    def __init__(self, session_id : Optional[str] = None, recipe : Optional[CocktailRecipe] = None):
         # If the session id is not provided, we will generate a new one
         if not session_id:
             self.session_id = str(uuid.uuid4())
@@ -42,7 +43,7 @@ class ChatService:
             # Get the chat history from redis
             self.chat_history = self.load_chat_history()
             # Get the recipe from redis
-            self.recipe = self.load_recipe()
+            self.recipe = recipe
 
     def load_chat_history(self):
         try:

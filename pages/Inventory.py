@@ -1,0 +1,260 @@
+# This is a page to allow the user to upload their bar inventory to be used in the cocktail creation process
+
+# Initial imports
+import streamlit as st
+from utils.inventory_functions import InventoryService
+from utils.image_utils import generate_image
+from utils.cocktail_functions import RecipeService
+import openai
+import pandas as pd
+import os
+from streamlit_extras.switch_page_button import switch_page
+from dotenv import load_dotenv
+import asyncio
+import uuid
+load_dotenv()
+
+# Get the OpenAI API key and org key from the .env file
+openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.organization = os.getenv("OPENAI_ORG")
+
+
+
+# Initialize the session state
+def init_inventory_session_variables():
+    # Initialize session state variables
+    session_vars = [
+        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'session_id'
+    ]
+    default_values = [
+        'get_inventory_choice', [], pd.DataFrame(), [], False, str(uuid.uuid4())
+    ]
+
+    for var, default_value in zip(session_vars, default_values):
+        if var not in st.session_state:
+            st.session_state[var] = default_value
+
+init_inventory_session_variables()
+
+def get_inventory_choice():
+    # Instantiate the InventoryService class
+    inventory_service = InventoryService(st.session_state.session_id)
+    # Allow the user to choose either to upload their own inventory or use the default inventory
+    st.markdown('''<div style = text-align:center>
+    <h3 style = "color: black;">Choose your inventory</h3>
+                </div>''', unsafe_allow_html=True)
+    inventory_choice = st.selectbox('Inventory Choice', ['Upload my own inventory', 'Use the default inventory'], index = 0, key = 'inventory_choice')
+    choice_submit_button = st.button('Submit', use_container_width=True, type = 'primary')
+    if choice_submit_button:
+        if inventory_choice == 'Upload my own inventory':
+            st.session_state.inventory_page = 'upload_inventory'
+            st.experimental_rerun()
+        else:
+            # If the user chooses to use the default inventory, we will load the default inventory
+            # from the resources folder
+            inventory_service.process_and_format_file(uploaded_file='../resources/inventory.csv')
+            st.session_state.inventory_page = 'choose_spirit'
+            st.experimental_rerun()
+
+# Create the function to allow the user to upload their inventory.  We will borrow this from the "Inventory Cocktails" page
+def upload_inventory():
+    # Instantiate the InventoryService class
+    inventory_service = InventoryService(st.session_state.session_id)
+    # Set the page title
+    st.markdown('''
+    <div style = text-align:center>
+    <h3 style = "color: black;">Upload your inventory</h3>
+    <h5 style = "color: #7b3583;">The first column of your file should contain the name of the spirit\
+        and the second column should contain the quantity of that spirit that you have in stock.\
+        By uploading your inventory, you are allowing the model to prioritize using up ingredients you already have on hand when suggesting cocktails.</h5>
+    </div>
+    ''', unsafe_allow_html=True)
+    # Create a file uploader
+    uploaded_file = st.file_uploader("Choose a file", type=['csv', 'xlsx', 'xls'])
+    if uploaded_file:
+        upload_file_button = st.button('Upload File and Continue to Cocktail Creation', use_container_width=True, type = 'secondary')
+        # If the user clicks the upload file button, process the file
+        if upload_file_button:
+            with st.spinner('Converting and formatting your file...'):
+                # Process the file, format it, and save it to the redis database
+                st.session_state.df = inventory_service.process_and_format_file(uploaded_file)
+                # Insert a "Use in Cocktail" column as the first column and set it to False for all rows
+                st.session_state.inventory_page = "choose_spirit"
+                st.experimental_rerun()
+    else:
+        st.warning('Please upload a file to continue')
+
+# Define a function that will allow the user to select the spirit they want to use in their cocktail
+# We will use the new st.data_editor library to allow for dynamic display of the inventory dataframe
+# and the ability to let the user interact with it and select the spirit from their inventory
+def choose_spirit():
+    inventory_service = InventoryService(st.session_state.session_id)
+    inventory = inventory_service.load_inventory()
+    # Create a dataframe from the inventory dictionary
+    inventory_df = pd.DataFrame.from_dict(inventory, orient="columns")
+    # Insert a "Use in Cocktail" column as the first column and set it to False for all rows
+    inventory_df.insert(0, "Use in Cocktail", False)
+
+
+    # Set the page title
+    st.markdown("##### Choose your spirit")
+    st.markdown('**Select the spirit from the inventory below\
+                that you are trying to use up. Besides the primary spirit you select,\
+                the model will prioritize other items already in your inventory to minimize\
+                the need to bring in outside liquors.**')
+            
+    st.text("")
+
+    edit_df = st.data_editor(
+        inventory_df,
+        column_config={
+        "Use in Cocktail": st.column_config.CheckboxColumn(
+            "Use in Cocktail?",
+            help="Check this box if you want to use this spirit in your cocktail",
+            default=False,
+        )
+    },
+    disabled=["widgets"],
+    hide_index=True,
+    key="data_editor"
+)
+    # Let the user know that they can edit the values in the dataframe before submitting
+    st.warning("**You can edit the values in the inventory to experiment, including the\
+                   spirit names as long as it is in the same format and is a valid liquor.\
+               To sort the values, click on the column name.**")
+    
+    # Check to make sure only one of the "Use in Cocktail" checkboxes is checked, otherwise display an error message
+    if edit_df['Use in Cocktail'].sum() == 1:
+        display_data_editor_button = st.button(f'Create a cocktail using {edit_df[edit_df["Use in Cocktail"] == True]["Name"].values[0]}', use_container_width=True, type = 'primary')
+        if display_data_editor_button:
+              # Create an inventory list that is the first column of the dataframe
+            inventory_list = edit_df['Name'].tolist()
+            st.session_state.inventory_list = inventory_list
+            # Get the name of the spirit the user selected
+            st.session_state['chosen_spirit'] = edit_df[edit_df['Use in Cocktail'] == True]['Name'].values[0]
+            # Set the demo_page session_state variable to the name of the spirit
+            st.session_state.inventory_page = "create_cocktail"
+            st.experimental_rerun()
+    else:
+        st.error('Please select exactly one spirit to use in your cocktail')
+
+# Create the function to allow the user to create their cocktail.  We will be repurposing the existing "Create Cocktail" page
+
+def create_cocktail():
+    # Instantiate the RecipeService class
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    # Build the form 
+    # Create the header
+    st.markdown('''<div style="text-align: center;">
+    <h4 style = "color:#7b3583;">Tell us about the cocktail you want to create!</h4>
+    </div>''', unsafe_allow_html=True)
+    st.text("")
+
+    # Display a message with the spirit the user selected
+    st.markdown(f'''<div style="text-align: center;">
+    <h5>Spirit selected: <div style="color:red;">{st.session_state.chosen_spirit}</div></h5>
+    </div>''', unsafe_allow_html=True)
+
+    st.text("")
+
+    # Set the chosen_liquor variable to the spirit the user selected
+    chosen_liquor = st.session_state.chosen_spirit
+
+    # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
+    cocktail_type = st.selectbox('What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard'])
+    # Allow the user the option to select a type of cuisine to pair it with if they have not uploaded a food menu
+    cuisine = st.selectbox('What type of cuisine, if any, are you looking to pair it with?', ['Any', 'Fresh Northern Californian', 'American',\
+                            'Mexican', 'Italian', 'French', 'Chinese', 'Japanese', 'Thai', 'Indian', 'Greek', 'Spanish', 'Korean', 'Vietnamese',\
+                            'Mediterranean', 'Middle Eastern', 'Caribbean', 'British', 'German', 'Irish', 'African', 'Moroccan', 'Nordic', 'Eastern European',\
+                            'Jewish', 'South American', 'Central American', 'Australian', 'New Zealand', 'Pacific Islands', 'Canadian', 'Other'])
+    # Allow the user to enter a theme for the cocktail if they want
+    theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
+
+    # Create the submit button
+    cocktail_submit_button = st.button(label='Create your cocktail!')
+    if cocktail_submit_button:
+        with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
+            recipe_service.get_inventory_cocktail_recipe(st.session_state.inventory_list, chosen_liquor, cocktail_type, cuisine, theme)
+            st.session_state.image_generated = False
+            st.session_state.inventory_page = "display_recipe"
+            st.experimental_rerun()
+
+
+def display_recipe():
+    # Instantiate the RecipeService class
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    # Load the recipe
+    recipe = recipe_service.load_recipe()
+    # Create the header
+    st.markdown('''<div style="text-align: center;">
+    <h4>Here's your recipe!</h4>
+    <hr>    
+    </div>''', unsafe_allow_html=True)
+    # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
+    col1, col2 = st.columns([1.5, 1], gap = "large")
+    with col1:
+        # Display the recipe name
+        st.markdown(f'**Recipe Name:** {recipe.name}')
+        # Display the recipe ingredients
+        st.markdown('**Ingredients:**')
+        # If there are inventory ingredients, display them in red
+        for ingredient in recipe.ingredients:
+                # If the ingredient is in the inventory, display it in red
+            if ingredient[0] in st.session_state.inventory_list:
+                st.markdown(f'* :red[{ingredient[0]}: {ingredient[1]} {ingredient[2]}]')
+            else:
+                st.markdown(f'* {ingredient[0]}: {ingredient[1]} {ingredient[2]}')
+        # Let the user know the key to the colors
+        st.markdown('<div style="color: red;">* Red ingredients are ones that you have in your inventory.</div>', unsafe_allow_html=True)
+        
+        st.text("")
+        
+        # Display the recipe instructions
+        st.markdown('**Instructions:**')
+        for instruction in recipe.instructions:
+            st.markdown(f'* {instruction}')
+        # Display the recipe garnish
+        st.markdown(f'**Garnish:**  {recipe.garnish}')
+        # Display the recipe glass
+        st.markdown(f'**Glass:**  {recipe.glass}')
+        # Display the flavor profile
+        st.markdown(f'**Flavor Profile:**  {recipe.flavor_profile}')
+    with col2:
+        # Display the recipe name
+        st.markdown(f'<div style="text-align: center;">{recipe.name}</div>', unsafe_allow_html=True)
+        st.text("")
+        # Placeholder for the image
+        image_placeholder = st.empty()
+        # Check if the image has already been generated
+        if st.session_state.image_generated == False:
+            image_placeholder.text("Generating cocktail image...")
+            # Generate the image
+            image_prompt = f'A cocktail named {recipe.name} in a {recipe.glass} glass with a {recipe.garnish} garnish'
+            st.session_state.image = generate_image(image_prompt)
+            st.session_state.image_generated = True
+        # Update the placeholder with the generated image
+        image_placeholder.image(st.session_state.image['output_url'], use_column_width=True)
+        # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
+        st.markdown('''<div style="text-align: center;">
+        <p>AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
+        </div>''', unsafe_allow_html=True)
+        st.warning('**Note:** The actual cocktail may not look exactly like this!')
+
+        # Create an option to chat about the recipe
+        chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
+        if chat_button:
+            st.session_state.bar_chat_page = "recipe_chat"
+            switch_page('Cocktail Chat')
+
+
+if st.session_state.inventory_page == 'get_inventory_choice':
+    get_inventory_choice()
+elif st.session_state.inventory_page == 'upload_inventory':
+    upload_inventory()
+elif st.session_state.inventory_page == 'choose_spirit':
+    choose_spirit()
+elif st.session_state.inventory_page == 'create_cocktail':
+    create_cocktail()
+elif st.session_state.inventory_page == 'display_recipe':
+    display_recipe()
+

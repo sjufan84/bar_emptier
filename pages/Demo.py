@@ -305,13 +305,15 @@ def create_cocktail():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_inventory_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
+            recipe_service.get_inventory_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
             st.session_state.image_generated = False
             st.session_state.demo_page = "display_recipe"
             st.experimental_rerun()
 
 # Function to display the recipe
 def display_recipe():
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    recipe = recipe_service.load_recipe()
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h4>Here's your recipe!</h4>
