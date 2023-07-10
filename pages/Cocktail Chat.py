@@ -1,9 +1,7 @@
-# We are going to allow the user to decide between three chefs who have 3 different cooking styles, give their specifications
-# and then generate a recipe for them. After that we will then allow them to ask the selected chef questions about the recipe
 import streamlit as st
 from streamlit_chat import message
-from utils.chat_utils import initialize_chat, save_chat_history_dict, add_message_to_chat, create_bartender_data,\
-                             get_recipe_bartender_response, get_general_bartender_response, get_chat_choices
+from utils.chat_utils import ChatService, Context
+import uuid
 import openai
 import os
 from streamlit_extras.switch_page_button import switch_page
@@ -12,172 +10,99 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# Set up the OpenAI API configuration
+openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.organization = os.getenv("OPENAI_ORG")
+
+# Define a function to reset the other pages to their default state
+def reset_pages():
+    st.session_state.cocktail_page = 'get_cocktail_info'
+    st.session_state.inventory_page = 'upload_inventory'
+    st.session_state.menu_page = 'upload_menus'
+
+reset_pages()
+
+
 def init_chat_session_variables():
     # Initialize session state variables
     session_vars = [
-        'recipe', 'bar_chat_page', 'style','attitude', 'initials_seed', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict', 'i', 'seed'
+        'recipe', 'bar_chat_page', 'chat_service', 'chat_history', 'session_id', 'context', 'i'
     ]
     default_values = [
-        '', 'chat_choices', '', '', '', [], '', '', None, {}, 0, "Spooky"
+        None, 'chat_choice', None, [], str(uuid.uuid4()), None, 0
     ]
 
     for var, default_value in zip(session_vars, default_values):
         if var not in st.session_state:
             st.session_state[var] = default_value
 
-
-# Set up the OpenAI API configuration
-def setup_api():
-    # Set up the OpenAI API configuration
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    openai.organization = os.getenv("OPENAI_ORG")
-
-# Define a function to reset the other pages to their default state
-def reset_pages():
-    # Make sure that when the user clicks onto this page, the session state of the other pages is reset
-    st.session_state.cocktail_page = 'get_cocktail_info'
-    st.session_state.inventory_page = 'upload_inventory'
-    st.session_state.menu_page = 'upload_menus'
-
-
-# Initializations
 init_chat_session_variables()
-create_bartender_data()
-setup_api()
-reset_pages()
+chat_service = ChatService(session_id=st.session_state.session_id)
 
 
+def app():
 
-# Define the display recipe and follow up chat function
-def follow_up_recipe_chat():
-    if "seed" not in st.session_state:
-        st.session_state.seed = "Spooky"
+    st.write(st.session_state.bar_chat_page)
+    if st.session_state.bar_chat_page == "chat_choice":
+        get_chat_choice()
+    elif st.session_state.bar_chat_page == "display_chat":
+        display_chat()
+
+def get_chat_choice():
+    chat_service = ChatService(session_id=st.session_state.session_id)
+
+    if st.session_state.recipe:
+        st.markdown('**You have created a recipe.  Would you like to ask questions about it, or continue to a general bartender chat?**')
+        continue_recipe_button = st.button("Continue with Recipe")
+        general_chat_button = st.button("General Chat")
+        
+        if continue_recipe_button:
+            context = Context.RECIPE
+            st.session_state.context = context
+            chat_service.initialize_chat(context=context)
+            st.session_state.bar_chat_page = 'display_chat'
+        elif general_chat_button:
+            context = Context.GENERAL_CHAT
+            st.session_state.context = context
+            chat_service.initialize_chat(context=context)
+            st.session_state.bar_chat_page = 'display_chat'
     
-    # Add 1 to the i in session state so we can create unique widgets
-    st.session_state.i += 1
 
-    # Create a header
-    st.markdown('''<div style="text-align: center;">
-    <h4>Bartender Chat</h4>
-    </div>''', unsafe_allow_html=True)
-    st.text("")
-
-    # Display the recipe
-    st.write(st.session_state.recipe_text)
-
-    # Initialize the chat if the length of the chat history is 0
-    if len(st.session_state.chat_history_dict) == 0:
-        initial_message = "What questions can I answer for you about the recipe?"
-        initialize_chat(initial_message)
-        # Display the initial bartender message
-        message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
-    # Create a text area for the user to enter their message
-    user_message = st.text_area("Ask the bartender anything related to the recipe or just bar questions in general.  You may ask additional\
-                                follow up questions if needed.  Bartenders love to chat!", value='', height=150, max_chars=None, key=None)
-    # Create a button to submit the user message
-    submit_user_follow_up_button = st.button("Submit Follow Up Question", type = 'primary', use_container_width=True)
-    # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
-    if submit_user_follow_up_button:
-        with st.spinner('The bartender is thinking about your question...'):
-            add_message_to_chat(message = user_message, role = 'user')
-            # Generate the response from the bartender
-            bartender_response = get_recipe_bartender_response(question = user_message, recipe = st.session_state.parsed_recipe)
-            # Add the response to the chat history
-            add_message_to_chat(message = f'{bartender_response}', role = 'ai')
-            # Add the new chat history to the chat history dictionary
-            st.session_state.chat_history_dict = save_chat_history_dict()
-            # Display the chat history dictionary 
-            for chat_message in st.session_state.chat_history_dict:
-                if chat_message['type'] == 'human':
-                    message(chat_message['data']['content'], avatar_style='initials', seed = 'UU', key = f'{st.session_state.i}', is_user = True)
-                    st.session_state.i += 1
-                elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}',  key = f'{st.session_state.i}')
-                    st.session_state.i += 1
-
-    
-    # Embed a Google Form to collect feedback
-    st.markdown('---')
-    st.markdown('''<div style="text-align: center;">
-    <h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
-    </div>''', unsafe_allow_html=True)
-
-    src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
-    components.v1.iframe(src, height=600, scrolling=True)
-
-
-    # Create a button to allow the user to create a new recipe
-    create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
-    # Upon clicking the create new recipe button, we want to reset the chat history and chat history dictionary
-    # And return to the recipe creation page
-    if create_new_recipe_button:
-        # Reset the chat history and chat history dictionary
-        st.session_state.chat_history_dict = {}
-        st.session_state.chat_messages = []
-        st.session_state.history = None
-        # Return to the recipe creation page
-        st.session_state.bar_chat_page = 'get_cocktail_type'
-        switch_page("Create Cocktails")
+    else:
+        context = Context.GENERAL_CHAT
+        st.session_state.context = context
+        chat_service.initialize_chat(context=context)
+        st.session_state.bar_chat_page = 'display_chat'
         st.experimental_rerun()
 
-    
-
-
-    # Create a button to allow the user to return to "Chat Home"
-    return_to_chat_home_button = st.button("Return to Chat Home", type = 'primary', use_container_width=True)
-    # Upon clicking the return to chat home button, we want to reset the chat history and chat history dictionary
-    # And return to the chat home page
-    if return_to_chat_home_button:
-        # Reset the chat history and chat history dictionary
-        st.session_state.chat_history_dict = {}
-        st.session_state.chat_messages = []
-        # Return to the chat home page
-        st.session_state.bar_chat_page = 'chat_choices'
-        st.experimental_rerun()
-
-# Define the general chat function
-def general_chat():
-    # Create a header
-    st.markdown('''<div style="text-align: center;">
-    <h4>Bartender Chat</h4>
-    </div>''', unsafe_allow_html=True)
-    st.text("")
-
-    # Add 1 to the i in session state so we can create unique widgets
+def display_chat():
     st.session_state.i += 1
+    chat_service = ChatService(session_id=st.session_state.session_id)
+    chat_history = chat_service.chat_history
+    if len(chat_history) == 2:
+        initial_prompt = f"What questions can I answer about the {st.session_state.recipe_name}" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
+        message(initial_prompt, is_user=False, avatar_style = 'miniavs', seed='Spooky')
 
-    # Initialize the chat if the length of the chat history is 0
-    if len(st.session_state.chat_history_dict) == 0:
-        initial_message = "What questions can I answer for you today?"
-        initialize_chat(initial_message)
-    
-        # Display initial bartender message
-        message(f"{initial_message}", avatar_style='miniavs', seed = f'{st.session_state.seed}')
-    # Create a text area for the user to enter their message
-    user_message = st.text_area('Ask any bar question you might have, i.e. "What is Triple Sec" or "What is the proper muddling technique?  You can carry\
-                                the conversation on with additional questions if needed.  Bartenders love to chat!', value='', height=150, max_chars=None, key=None)
-    # Create a button to submit the user message
-    submit_user_follow_up_button = st.button("Submit Your Question", type = 'primary', use_container_width=True)
-    # Upon clicking the submit button, we want to add the user's message to the chat history and generate a an answer to their question
-    if submit_user_follow_up_button:
-        with st.spinner('The bartender is thinking about your question...'):
-            add_message_to_chat(message = user_message, role = 'user')
-            # Generate the response from the chef
-            bartender_response = get_general_bartender_response(question = user_message)
-            # Add the response to the chat history
-            add_message_to_chat(message = f'{bartender_response}', role = 'ai')
-            # Add the new chat history to the chat history dictionary
-            st.session_state.chat_history_dict = save_chat_history_dict()
-            # Display the chat history dictionary 
-            for chat_message in st.session_state.chat_history_dict:
-                if chat_message['type'] == 'human':
-                    message(chat_message['data']['content'], avatar_style='initials', seed = 'You', key = f'{st.session_state.i}', is_user = True)
-                    st.session_state.i += 1
-                elif chat_message['type'] == 'ai':
-                    message(chat_message['data']['content'], avatar_style='miniavs', seed = f'{st.session_state.seed}', key = f'{st.session_state.i}')
+    chat_container = st.container()
+    with chat_container:
+        # Display the chat history
+        for i, chat_message in enumerate(chat_history[1:]):
+            if chat_message['role'] == 'user':
+                message(chat_message['content'], is_user=True, key = f'user_message_{i}')
+            elif chat_message['role'] == 'assistant':
+                message(chat_message['content'], is_user=False, key = f'ai_message_{i}', avatar_style = 'miniavs', seed='Spooky') 
+            else:
+                pass
+    user_input = st.text_input("Type your message here", key='user_input')
+    submit_button = st.button("Submit")
 
-                    st.session_state.i += 1
-                    st.session_state.i += 1
+    if submit_button:
+        st.session_state.i+=1
+
+        with st.spinner("Thinking..."):
+            chat_service.get_bartender_response(question=user_input, session_id=st.session_state.session_id)
+            st.experimental_rerun()
+                
 
     # Embed a Google Form to collect feedback
     st.markdown('---')
@@ -217,22 +142,14 @@ def general_chat():
         st.session_state.bar_chat_page = 'chat_choices'
         st.experimental_rerun()
 
+app()
 
 
 
 
 
-# Establish the app flow
-if st.session_state.bar_chat_page == "chat_choices":
-    get_chat_choices()
-elif st.session_state.bar_chat_page == 'general_chat':
-    general_chat()
-elif st.session_state.bar_chat_page == 'recipe_chat':
-    follow_up_recipe_chat()
 
     
-
-       
 #st.sidebar.markdown("---")
 #st.sidebar.header("Instructions")
 #st.sidebar.markdown("1. Select a chef from the dropdown menu.")

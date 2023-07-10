@@ -2,232 +2,173 @@
 import streamlit as st
 import openai
 import os
-from langchain.memory import ChatMessageHistory
-from langchain.schema import messages_to_dict
-from streamlit_extras.switch_page_button import switch_page
+import json
+import uuid
+from typing import Optional
+from enum import Enum
+from redis import Redis as RedisStore
 from dotenv import load_dotenv
 load_dotenv()
-
 
 # Get the OpenAI API key and org key from the .env file
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
-def init_chat_session_variables():
-    # Initialize session state variables
-    session_vars = [
-        'recipe', 'bar_chat_page', 'style','attitude', 'chat_messages', 'chat_choice','response', 'history', 'chat_history_dict', 'seed'
-    ]
-    default_values = [
-        '', 'chat_choices', '', '', [], '', '', None, {}, 'Spooky'
-    ]
+# Initialize a connection to the redis store
+redis_store = RedisStore()
 
-    for var, default_value in zip(session_vars, default_values):
-        if var not in st.session_state:
-            st.session_state[var] = default_value
+# Establish the context which should be an enum with the following values: "recipe", "general_chat"
+class Context(Enum):
+    RECIPE = "recipe"
+    GENERAL_CHAT = "general_chat"
 
+# Define a class for the chat messages
+class ChatMessage:
+    # Define the init method
+    def __init__(self, content, role):
+        self.content = content
+        self.role = role
 
+# Define a class for the chat service -- this is the class we will use to track the chat history and save it to redis
+class ChatService:
+    def __init__(self, session_id : Optional[str] = None):
+        # If the session id is not provided, we will generate a new one
+        if not session_id:
+            self.session_id = str(uuid.uuid4())
+            self.chat_history = []
+            self.recipe = None
+        else:
+            self.session_id = session_id
+            # Get the chat history from redis
+            self.chat_history = self.load_chat_history()
+            # Get the recipe from redis
+            self.recipe = self.load_recipe()
 
-# Define a function to initialize the chatbot
-# This function will be re-used throughout the app
-# And take in the initial message as a parameter as well
-# as a chat type (e.g. "recipe" or "foodpedia", etc.
-# to distinguish between different chatbots and how they are stored in memory
-# Set it to the initial message in the chat history
-def initialize_chat(initial_message):
-    # Initialize the chatbot with the first message
-    history = ChatMessageHistory()
-    history.add_ai_message(initial_message)
-    st.session_state.history = history
-    return st.session_state.history
-
-# We need to define a function to save the chat history as a dictionary
-# This will be used to save the chat history to the database and to display the chat history
-def save_chat_history_dict():
-    # Save the chat history as a dictionary
-    chat_history_dict = messages_to_dict(st.session_state.history.messages)
-    st.session_state.chat_history_dict = chat_history_dict
-    return st.session_state.chat_history_dict
-
-
-# Now we need to define a function to add messages to the chatbot
-# This will take in the message_type (e.g. "user" or "ai")
-# and the message itself
-# It will then add the message to the chat history
-# and return the updated chat history
-def add_message_to_chat(message, role):
-    # Add the appropriate message to the chat history depending on the role
-    if role == "user":
-        st.session_state.history.add_user_message(message)
-    elif role == "ai":
-        st.session_state.history.add_ai_message(message)
-    
-    return st.session_state.history
-
-
-def create_bartender_data():
-    # Create chef-related dictionaries
-    global bartender_style_dict, bartender_attitude_dict, seed_dict
-   # Create a dictionary of chefs and their cooking styles, a seed for their initials to be displayed in the chatbot, and a dictionary of notes on each chef
-    bartender_style_dict = {
-        "Mixologist": "An innovative, craft-focused bartender skilled in blending unique flavors and utilizing advanced techniques for artistic cocktails.",
-
-        "Efficient" : "A fast-paced bartender adept at preparing popular drinks quickly and accurately in high-traffic environments.",
-
-        "Home Tinkerer" : "An enthusiastic amateur mixologist who experiments with various ingredients and techniques, creating unique drinks in a relaxed setting."
-    }
-    bartender_attitude_dict = {
-        "Mixologist": "Innovative and creative",
-        "Efficient" : "Fast-paced and accurate",
-        "Home Tinkerer" : "Relaxed and enthusiastic"
-        }
-    seed_dict = {
-        "Mixologist": "Spooky",
-        "Efficient" : "Mittens",
-        "Home Tinkerer" : "Bandit"
-    }
-
-# Define a function to get the user's choice of bartender style and attitude and whether or not they are querying a recipe
-def get_chat_choices():
-
-    # Create a selectbox to allow the user to choose a bartender style
-    st.subheader("Choose a bartender style")
-    bartender_style = st.selectbox(
-            "Select the type of bartender you want to chat with.  Each type of bartender has a different style and attitude, so you can\
-            choose the one that best fits your needs.",
-        ("Mixologist", "Efficient", "Home Tinkerer")
-    )
-    # If there is as recipe in the session state, give the user the option to ask a follow up question or continue with general conversation
-    # If there is not a recipe in session state, note that the user has not created a recipe yet and then allow them to continue with general conversation
-    if st.session_state.recipe != '':
-        st.success("**You have created a recipe.  Would you like to ask a follow up question about it or continue with general conversation?**")
-        # Create a selectbox to allow the user to choose whether or not they want to ask a follow up question about the recipe or just continue with general conversation
-        chat_choice_question = st.selectbox(
-            "Choose whether or not you want to ask a follow up question about your recipe or just continue with general conversation",
-            (["Recipe Chat", "General Conversation"])
-        )
-        if chat_choice_question == "Recipe Chat":
-            st.session_state.chat_choice = 'recipe_chat'
-        elif chat_choice_question == "General Conversation":
-            st.session_state.chat_choice = 'general_chat'
-    else:
-        st.warning('**You have not created a recipe yet.  If you want to create a recipe first to chat about, click "Create a Cocktail" below.\
-                    Otherwise you can continue with general bar questions by clicking the "Start Conversation" button.**')
-        st.session_state.chat_choice = 'general_chat'
-        # Create a button to allow the user to create a recipe
-        create_recipe_button = st.button("Create a Cocktail", type = 'primary', use_container_width=True)
-        if create_recipe_button:
-            switch_page("Create Cocktails")
-    
-    start_conversation_button = st.button("Start Conversation", type = 'primary', use_container_width=True)
-    if start_conversation_button:
-        # Establish the bartender style and attitude based on the user's choice and the relevant values in the dictionaries
-        st.session_state.style = bartender_style_dict[bartender_style]
-        st.session_state.attitude = bartender_attitude_dict[bartender_style]
-        st.session_state.seed = seed_dict[bartender_style]
-        # If the chat_choice is 'general_chat', set the bar_chat_page to 'general_chat'
-        # If the chat_choice is 'recipe_chat', set the bar_chat_page to 'recipe_chat'
-        if st.session_state.chat_choice == 'general_chat':
-            st.session_state.bar_chat_page = 'general_chat'
-            st.experimental_rerun()
-        elif st.session_state.chat_choice == 'recipe_chat':
-            st.session_state.bar_chat_page = 'recipe_chat'
-            st.experimental_rerun()
-        
-
-# Define the function to answer any follow up questions the user has about the recipe
-def get_recipe_bartender_response(question, recipe):
-    # Check to see if there is an inventory in the session state
-    messages = [
-    {
-        "role": "system",
-        "content": f"You are a master mixologist who has provided a recipe {recipe} for the user about which they would like to ask some follow up questions.  The conversation\
-            you have had so far is {st.session_state.history.messages}.  Please respond as a friendly bartender with {st.session_state.style}\
-            and a {st.session_state.attitude} attitude who is happy to answer the user's questions thoroughly."
-                
-    },
-    {
-        "role": "user",
-        "content": f"Thanks for the recipe!  I need to ask you a follow up question {question}."
-    },
-   
-    ]
-
-      # Use the OpenAI API to generate a recipe
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages = messages,
-            max_tokens=750,
-            frequency_penalty=0.5,
-            presence_penalty=0.75,
-            temperature=1,
-            n=1
-        )
-        st.session_state.response = response
-        response = response.choices[0].message.content
-
-    except:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
-            messages = messages,
-            max_tokens=500,
-            frequency_penalty=0.2,
-            temperature = 1, 
-            n=1, 
-            presence_penalty=0.2,
-        )
-        st.session_state.response = response
-        response = response.choices[0].message.content
-
-    return response
-
-# Define the function to answer general questions the user has about cocktails
-def get_general_bartender_response(question):
-        
-        messages = [
-        {
-            "role": "system",
-            "content": f"You are a master mixologist who is chatting with the user about cocktails.  The conversation\
-                you have had so far is {st.session_state.history.messages}.  Please respond as a friendly bartender with {st.session_state.style}\
-                and a {st.session_state.attitude} attitude who is happy to answer the user's questions thoroughly."
-                    
-        },
-        {
-            "role": "user",
-            "content": f"I have a question about cocktails.  {question}"
-        },
-    
-        ]
-    
-        # Use the OpenAI API to generate a recipe
+    def load_chat_history(self):
         try:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages = messages,
-                max_tokens=750,
-                frequency_penalty=0.5,
-                presence_penalty=0.75,
-                temperature=1,
-                n=1
-            )
-            st.session_state.response = response
-            response = response.choices[0].message.content
-    
-        except:
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo-0301",
-                messages = messages,
-                max_tokens=500,
-                frequency_penalty=0.2,
-                temperature = 1, 
-                n=1, 
-                presence_penalty=0.2,
-            )
-            st.session_state.response = response
-            response = response.choices[0].message.content
-    
-        return response
+            chat_history_json = redis_store.get(self.session_id)
+            if chat_history_json:
+                chat_history_dict = json.loads(chat_history_json)
+                return [message for message in chat_history_dict]
+            else:
+                return []
+        except Exception as e:
+            print(f"Failed to load chat history from Redis: {e}")
+            return []
+
+    def load_recipe(self):
+        try:
+            return redis_store.get(f"{self.session_id}_recipe").decode("utf-8")
+        except Exception as e:
+            print(f"Failed to load recipe from Redis: {e}")
+            return None
+
+    def save_chat_history(self):
+        try:
+            # Save the chat history to redis
+            chat_history_json = json.dumps(self.chat_history)
+            redis_store.set(self.session_id, chat_history_json)
+        except Exception as e:
+            print(f"Failed to save chat history to Redis: {e}")
+        return self.chat_history
+
+
+    # Define a function to initialize the chat with an initial message.  We need to take in the
+    # context and then generate the initial message based on that.  Context should be an enum with
+    # the following values: "recipe", "general_chat"
+    def initialize_chat(self, context: Context):
+        # Check to see if the context is "recipe" -- if it is, we need to retrieve the
+        # recipe from the session state and use that to generate the initial message
+        if context == Context.RECIPE:
+            initial_message = {
+                                    "role": "system", 
+                                    "content": f"""
+                                    You are a master mixologist answering a user's questions 
+                                    about the recipe {self.recipe} you created for them.  Your
+                                    chat messages so far are {self.chat_history[1:]} 
+                                    """
+                                    }
+        else:
+            initial_message = {"role": "system", "content": f"You are a master mixologist answering\
+                                   a user's questions about bartending."}
+            
+        second_message = {"role": "system", "content": "Your chat messages so far are:"}
+        # Append the initial message to the chat history
+        self.chat_history.append(initial_message)
+        self.chat_history.append(second_message)
+
+        # Save the chat history to redis
+        self.save_chat_history()
+
+        # Return the chat history
+        return initial_message
+
+
+    # Define a function to add a message to the chat history
+    # This will take in a "role" string and a "content" string
+    # Role must be one of the following: "system", "user", "ai"
+    def add_message(self, role, content):
+        # If the role is user, we will add a user message formatted as a HumanMessage
+        if role == "user":
+            message = {"role": "user", "content": content}
+        # If the role is ai, we will add an ai message formatted as an AIMessage
+        elif role == "ai":
+            message = {"role": "assistant", "content": content}
+        # If the role is system, we will add a system message formatted as a SystemMessage
+        elif role == "system":
+            message = {"role": "system", "content": content}
+        # Append the message to the chat history
+        self.chat_history.append(message)
+
+        # Save the chat history to redis
+        self.save_chat_history()
+
+        #Save the chat history to redis
+        return self.chat_history
+
+    # Define a function to clear the chat history
+    def clear_chat_history(self):
+        self.chat_history = []
+        self.save_chat_history()
+        return self.chat_history
+
+    # Define the function to answer any follow up questions the user has about the recipe
+    def get_bartender_response(self, question: str, session_id: str):
+        # Load the chat history from redis
+        chat_service = ChatService(session_id)
+        # Append the user's question to messages
+        chat_service.add_message(role="user", content=question)
+        chat_history = chat_service.load_chat_history()
+        st.write(chat_history)
+        # Add the rest of the chat history to messages
+        messages = chat_history
+        # Define the models we want to iterate through
+        models = ["gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-0613", "gpt-3.5-turbo"]
+        # Iterate through the models and generate a response
+        for model in models:
+            try:
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages = messages,
+                    max_tokens=750,
+                    frequency_penalty=0.2,
+                    presence_penalty=0.6,
+                )
+                bartender_response = response.choices[0].message.content
+                # Append the bartender response to the chat history
+                chat_service.add_message(role="ai", content=bartender_response)
+                # Save the chat history to Redis
+                chat_service.save_chat_history()
+
+                return bartender_response
+
+                
+
+                
+            except Exception as e:
+                print(f"Failed to generate response with model {model}: {e}")
+                continue
+
 
 def get_training_bartender_response(question, recipe, guide):
     # Check to see if there is an inventory in the session state

@@ -11,15 +11,11 @@ import streamlit as st
 import pandas as pd
 from utils.inventory_functions import process_file
 from utils.image_utils import generate_image
-from utils.cocktail_functions import get_inventory_cocktail_recipe
-import asyncio
+from utils.cocktail_functions import RecipeService
 from streamlit_extras.switch_page_button import switch_page
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
-from typing import List
-
-
-
+import uuid
 import os
 from dotenv import load_dotenv
 import openai
@@ -39,10 +35,10 @@ def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
         'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'demo_page', 'chosen_spirit', 'estimated_cost', 'recipe_cost',\
-                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide', 'ingredients'
+                         'cost_estimates', 'total_ni_cost', 'num_drinks', 'total_cost', 'total_drinks_cost', 'inventory_ingredients', 'ni_ingredients', 'training_guide', 'ingredients', 'session_id'
     ]
     default_values = [
-        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], "", []
+        'upload_inventory', [], pd.DataFrame(), [], False, 'upload_inventory', '', 0.00, [], [], 0.00, 0.00, 0.00, 0.00, [], [], "", [], str(uuid.uuid4())
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -104,6 +100,13 @@ def calculate_inventory_item_cost(ingredients, amounts, units):
     
     # Calculate the cost of the ingredients by multiplying the cost of each ingredient by the amount of the ingredient in the cocktail if the ingredient is in the inventory
     cost = [ingredient_cost * amount for ingredient_cost, amount in zip(cost, amounts) if ingredient_cost != 0]
+
+    # Create a total cost variable and set it equal to the sum of the cost list
+    total_cost = sum(cost)
+
+    st.session_state.total_cost = total_cost
+    
+    # Create a dictionary
     
     
 # Create the parser object for the cost of the cocktail
@@ -194,7 +197,7 @@ def estimate_cost_of_non_inventory_items(ingredients):
     
 
 # Create the function to allow the user to upload their inventory.  We will borrow this from the "Inventory Cocktails" page
-async def upload_inventory():
+def upload_inventory():
     # Set the page title
     st.markdown('''
     <div style = text-align:center>
@@ -212,7 +215,7 @@ async def upload_inventory():
         if upload_file_button:
             with st.spinner('Converting and formatting your file...'):
                 # Use the await keyword to wait for the file to be processed
-                st.session_state.df = await process_file(uploaded_file)
+                st.session_state.df = process_file(uploaded_file)
                 # Insert a "Use in Cocktail" column as the first column and set it to False for all rows
                 st.session_state.is_demo = True
                 st.session_state.df.insert(0, "Use in Cocktail", False)
@@ -269,7 +272,8 @@ def choose_spirit():
 # Create the function to allow the user to create their cocktail.  We will be repurposing the existing "Create Cocktail" page
 
 def create_cocktail():
-
+    # Instantiate the RecipeService class
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
     # Build the form 
     # Create the header
     st.markdown('''<div style="text-align: center;">
@@ -314,13 +318,7 @@ def display_recipe():
     <hr>    
     </div>''', unsafe_allow_html=True)
     # Create 2 columns, one to display the recipe and the other to display a generated picture as well as the buttons
-    # Create a button to submit the recipe and generate a training guide
-    get_training_guide_button = st.button(label='Get a training guide for this recipe!', use_container_width=True, type = 'primary')
-    if get_training_guide_button:   
-        with st.spinner('Generating your training guide.  This may take a minute...'):
-            st.session_state.training_guide = generate_training_guide(st.session_state.recipe)
-        # Once the training guide is generated, display the training guide using st.write
-        st.write(st.session_state.training_guide)
+    
 
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
@@ -335,21 +333,21 @@ def display_recipe():
             ingredient_amount = ingredient.amount
             ingredient_unit = ingredient.unit
 
+            # If the ingredient amount float ends in 0, remove the decimal point
+            if ingredient_amount % 1 == 0:
+                ingredient_amount = int(ingredient_amount)
+
+            # Checking to see if the ingredients are in our inventory.  If so, display them in red.  If not, display them in black
             if ingredient_name.lower() in st.session_state.df['Name'].str.lower().values:
                 st.markdown(f'* <div style="color: red;">{ingredient_name}: {ingredient_amount} {ingredient_unit}</div>', unsafe_allow_html=True)
                 st.session_state['inventory_ingredients'].append(ingredient)
             else:
                 st.markdown(f'* <div style="color: black;">{ingredient_name}: {ingredient_amount} {ingredient_unit}</div>', unsafe_allow_html=True)
-                st.session_state['ni_ingredients'].append(ingredient)   
-
-
-                
+                st.session_state['ni_ingredients'].append(ingredient)  
+        
         # Create a key so the user can see what the colors mean
         st.markdown(f'<div style="color: red;">Note: If the color of the ingredient is red, it is from your inventory', unsafe_allow_html=True)
-      
-
-        
-          
+       
         st.text("")
 
         # Display the recipe instructions
@@ -406,6 +404,16 @@ def display_recipe():
                 st.session_state.recipe_cost = cost_out_recipe()
                 st.session_state.demo_page = "display_recipe_cost"
                 st.experimental_rerun()
+
+        
+    # Create a button to submit the recipe and generate a training guide
+    get_training_guide_button = st.button(label='Get a training guide for this recipe!', use_container_width=True, type = 'primary')
+    if get_training_guide_button:   
+        with st.spinner('Generating your training guide.  This may take a minute...'):
+            st.session_state.training_guide = generate_training_guide(st.session_state.recipe)
+        # Once the training guide is generated, display the training guide using st.write
+        st.write(st.session_state.training_guide)
+
 
 
 # Create a function to display the cost of the recipe
@@ -486,7 +494,7 @@ def display_cost():
 
 # Establish the flow of the application
 if st.session_state.demo_page == "upload_inventory":
-    asyncio.run(upload_inventory())
+    upload_inventory()
 elif st.session_state.demo_page == "choose_spirit":
     choose_spirit()
 elif st.session_state.demo_page == "create_cocktail":

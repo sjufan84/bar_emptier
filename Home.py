@@ -12,10 +12,11 @@ import pandas as pd
 def init_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'num_recipes', 'demo_page', 'menu_page', 'df', 'is_demo', 'training_page'
+        'cocktail_page', 'num_recipes', 'demo_page', 'menu_page', 'df', 'is_demo', 'training_page', 'bar_chat_page', 'recipe'
+        
     ]
     default_values = [
-        'get_cocktail_info', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type'
+        'get_cocktail_info', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type', 'chat_choice', None
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -26,7 +27,7 @@ def init_session_variables():
 def reset_pages():
     st.session_state.cocktail_page = 'get_cocktail_info'
     st.session_state.menu_page = "upload_menus"
-    st.session_state.bar_chat_page = "chat_choices"
+    st.session_state.bar_chat_page = "chat_choice"
     st.session_state.inventory_page = "upload_inventory"
     st.session_state.training_page = "get_training_type"
 
@@ -64,7 +65,7 @@ with col2:
     # Create a button to start chatting with a bartender
     bartender_button = st.button('Chat with a Bartender', use_container_width=True, type='primary')
     if bartender_button:
-        st.session_state.bar_chat_page = 'chat_choices'
+        st.session_state.bar_chat_page = 'chat_choice'
         switch_page('Cocktail Chat')
         st.experimental_rerun()
 

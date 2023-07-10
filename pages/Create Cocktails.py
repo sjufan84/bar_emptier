@@ -3,20 +3,21 @@
 # Import libraries
 import streamlit as st
 # from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
-from utils.cocktail_functions import get_cocktail_recipe, get_menu_cocktail_recipe, get_inventory_cocktail_recipe
+from utils.cocktail_functions import RecipeService
 from streamlit_extras.switch_page_button import switch_page
 from utils.image_utils import generate_image 
 from streamlit import components
 from PIL import Image
+import uuid
 
 # Initialize the session state
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients', 'session_id'
     ]
     default_values = [
-        'get_cocktail_info', '', '', '', None, [], '', False, []
+        'get_cocktail_info', '', '', '', None, [], '', False, [], str(uuid.uuid4())
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -100,6 +101,8 @@ def get_cocktail_type():
         
 
 def get_cocktail_info():
+    # Instantiate the RecipeService class
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
 
     # Build the form 
     # Create the header
@@ -128,12 +131,12 @@ def get_cocktail_info():
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
+            recipe_service.get_cocktail_recipe(chosen_liquor, cocktail_type, cuisine, theme)
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
-async def get_menu_cocktail_info():
+'''async def get_menu_cocktail_info():
 
     # Build the form 
 
@@ -151,11 +154,14 @@ async def get_menu_cocktail_info():
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
             get_menu_cocktail_recipe(liquor, cocktail_type, theme)
             st.session_state.cocktail_page = "display_recipe"
-            st.experimental_rerun()
+            st.experimental_rerun()'''
 
 
 
 def display_recipe():
+    # Instantiate the RecipeService class
+    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    recipe = recipe_service.load_recipe()
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h4>Here's your recipe!</h4>
@@ -165,24 +171,24 @@ def display_recipe():
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
         # Display the recipe name
-        st.markdown(f'**Recipe Name:** {st.session_state["cocktail_name"]}')
+        st.markdown(f'**Recipe Name:** {recipe["name"]}')
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
-        for ingredient in st.session_state['ingredients']:
-            st.markdown(f'* {ingredient}')
+        for ingredient in recipe['ingredients']:
+            st.markdown(f'{ingredient}')
         # Display the recipe instructions
         st.markdown('**Instructions:**')
-        for instruction in st.session_state['instructions']:
-            st.markdown(f'* {instruction}')
+        for instruction in recipe['instructions']:
+            st.markdown(f'{instruction}')
         # Display the recipe garnish
-        st.markdown(f'**Garnish:**  {st.session_state.garnish}')
+        st.markdown(f'**Garnish:** {recipe["garnish"]}')
         # Display the recipe glass
-        st.markdown(f'**Glass:**  {st.session_state.glass}')
-        # Display the flavor profile
-        st.markdown(f'**Flavor Profile:**  {st.session_state.flavor_profile}')
+        st.markdown(f'**Glass:** {recipe["glass"]}')
+        # Display the recipe flavor profile
+        st.markdown(f'**Flavor Profile:** {recipe["flavor_profile"]}')
     with col2:
         # Display the recipe name
-        st.markdown(f'<div style="text-align: center;">{st.session_state["cocktail_name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center;">{recipe["name"]}</div>', unsafe_allow_html=True)
         st.text("")
         # Placeholder for the image
         image_placeholder = st.empty()
@@ -190,8 +196,8 @@ def display_recipe():
         if st.session_state.image_generated == False:
             image_placeholder.text("Generating cocktail image...")
             # Generate the image
-            image_prompt = f'A cocktail named {st.session_state.cocktail_name} in a {st.session_state.glass} glass with a {st.session_state.garnish} garnish'
-            st.session_state.image = generate_image(image_prompt)
+            image_prompt = f'A cocktail named {recipe["name"]} garnished with {recipe_service.recipe.garnish} in a {recipe_service.recipe.glass} glass.'
+            st.session_state.image = Image.open(generate_image(image_prompt))
             st.session_state.image_generated = True
         # Update the placeholder with the generated image
         image_placeholder.image(st.session_state.image['output_url'], use_column_width=True)
@@ -237,7 +243,5 @@ if st.session_state.cocktail_page == "get_cocktail_type":
     get_cocktail_type()
 elif st.session_state.cocktail_page == "get_cocktail_info":
     get_cocktail_info()
-elif st.session_state.cocktail_page == "get_menu_cocktail_info":
-    get_menu_cocktail_info()
 elif st.session_state.cocktail_page == "display_recipe":
     display_recipe()
