@@ -224,11 +224,19 @@ def display_recipe():
         chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
         if chat_button:
             chat_service = ChatService(session_id=st.session_state.session_id, recipe=recipe)
-            context = Context.RECIPE
-            st.session_state.context = context
-            chat_service.initialize_chat(context=context)
-            st.session_state.bar_chat_page = 'display_chat'
-            switch_page("Cocktail Chat")
+            chat_service.initialize_chat(context=Context.RECIPE)
+            st.session_state.context = Context.RECIPE
+            st.session_state.bar_chat_page = "display_chat"
+            switch_page('Cocktail Chat')
+
+        # Create an option to get a new recipe
+        new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
+        if new_recipe_button:
+            # Clear the session state variables
+            st.session_state.image_generated = False
+            st.session_state.cocktail_page = "get_cocktail_type"
+            recipe_service.recipe = None
+            st.experimental_rerun()
             
     # Display the feedback form
     st.markdown('---')

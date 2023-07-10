@@ -140,7 +140,6 @@ class ChatService:
         # Append the user's question to messages
         chat_service.add_message(role="user", content=question)
         chat_history = chat_service.load_chat_history()
-        st.write(chat_history)
         # Add the rest of the chat history to messages
         messages = chat_history
         # Define the models we want to iterate through

@@ -241,14 +241,15 @@ class RecipeService:
 
 
     # Define the function to call the openai API
-    def get_cocktail_recipe(self, liquor : str, theme : str, cuisine : str, cocktail_type : str) -> CocktailRecipe:
+    def get_cocktail_recipe(self, liquor : str, theme : str, cuisine : str, cocktail_type : str):
         parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
         
         # Define the first system message.  This let's the model know what type of output\
         # we are expecting and in what format it needs to be in.
         prompt = PromptTemplate(
             template = "You are a master mixologist helping a user use up the excess liquor {liquor}\
-                        they have in their inventory by using it in a creative and innovate cocktail recipe.\
+                        they have in their inventory by creating a creative and innovative cocktail recipe.\
+                        featuring their excess liquor {liquor}.\
                         The recipe should be based around a theme {theme}, cuisine type {cuisine},\
                         and the type of cocktail {cocktail_type} the user wants to make.\
                         The recipe should include the ingredient names, the ingredient amounts,\
@@ -271,7 +272,7 @@ class RecipeService:
         messages = chat_prompt.format_prompt(liquor=liquor, theme=theme, cuisine=cuisine, cocktail_type=cocktail_type).to_messages()
 
         # Create a list of models to loop through in case one fails
-        models = ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k"]
+        models = ['gpt-4-0613', 'gpt-4', "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k"]
 
         # Loop through the models and try to generate the recipe
         for model in models:
@@ -291,6 +292,7 @@ class RecipeService:
                     return parsed_recipe
                 except Exception as e:
                     print(f"Failed to parse recipe: {e}")
+                    continue
             except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
                     

@@ -89,7 +89,7 @@ def display_chat():
     chat_container = st.container()
     with chat_container:
         # Display the chat history
-        for i, chat_message in enumerate(chat_history[1:]):
+        for i, chat_message in enumerate(chat_history[-2:]):
             if chat_message['role'] == 'user':
                 message(chat_message['content'], is_user=True, key = f'user_message_{i}')
             elif chat_message['role'] == 'assistant':
@@ -97,25 +97,16 @@ def display_chat():
             else:
                 pass
     user_input = st.text_input("Type your message here", key='user_input')
-    submit_button = st.button("Submit")
+    submit_button = st.button("Submit", type='primary', key='submit_button', use_container_width=True)
 
     if submit_button:
 
         with st.spinner("Thinking..."):
             chat_service.get_bartender_response(question=user_input, session_id=st.session_state.session_id)
             st.experimental_rerun()
-                
 
-    # Embed a Google Form to collect feedback
-    st.markdown('---')
-    st.markdown('''<div style="text-align: center;">
-    <h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
-    </div>''', unsafe_allow_html=True)
-
-    src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
-    components.v1.iframe(src, height=600, scrolling=True)
-
-
+    st.markdown("---")
+    
     # Create a button to allow the user to create a new recipe
     create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
     # Upon clicking the create new recipe button, we want to reset the chat history and chat history dictionary
@@ -143,6 +134,20 @@ def display_chat():
         # Return to the chat home page
         st.session_state.bar_chat_page = 'chat_choices'
         st.experimental_rerun()
+                
+
+    # Embed a Google Form to collect feedback
+    st.markdown('---')
+    st.markdown('''<div style="text-align: center;">
+    <h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
+    </div>''', unsafe_allow_html=True)
+
+    src="https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
+    components.v1.iframe(src, height=600, scrolling=True)
+
+
+
+    
 
 app()
 
