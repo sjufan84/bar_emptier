@@ -5,12 +5,13 @@ import streamlit as st
 from utils.inventory_functions import InventoryService
 from utils.image_utils import generate_image
 from utils.cocktail_functions import RecipeService
+from utils.chat_utils import ChatService, Context
+from typing import Optional
 import openai
 import pandas as pd
 import os
 from streamlit_extras.switch_page_button import switch_page
 from dotenv import load_dotenv
-import asyncio
 import uuid
 load_dotenv()
 
@@ -24,10 +25,10 @@ openai.organization = os.getenv("OPENAI_ORG")
 def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
-        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'session_id'
+        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'session_id', 'context', 'ni_ingredients', 'total_inventory_ingredients_cost'
     ]
     default_values = [
-        'get_inventory_choice', [], pd.DataFrame(), [], False, str(uuid.uuid4())
+        'get_inventory_choice', [], pd.DataFrame(), [], False, str(uuid.uuid4()), None, [], []
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -243,9 +244,80 @@ def display_recipe():
         # Create an option to chat about the recipe
         chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
         if chat_button:
-            st.session_state.bar_chat_page = "recipe_chat"
+            chat_service = ChatService(session_id=st.session_state.session_id, recipe=recipe)
+            chat_service.initialize_chat(context=Context.RECIPE)
+            st.session_state.context = Context.RECIPE
+            st.session_state.bar_chat_page = "display_chat"
             switch_page('Cocktail Chat')
 
+        # Create an option to cost out the recipe
+        cost_button = st.button('Calculate the cost and potential profit of this recipe.', type = 'primary', use_container_width=True)
+        if cost_button:
+            recipe_service.cost_recipe(session_id=st.session_state.session_id)
+            recipe_service.get_total_drinks(session_id=st.session_state.session_id)
+            st.session_state.inventory_page = "display_cost"
+            st.experimental_rerun()
+
+# Define a function to display the cost of the recipe -- we will use the RecipeService class to do this
+# Create a function to display the cost of the recipe
+def display_cost(session_id : Optional[str] = None):
+    session_id = st.session_state.session_id
+    recipe_service = RecipeService(session_id)
+    recipe = recipe_service.load_recipe()
+    inventory_service = InventoryService(session_id)
+    inventory = inventory_service.load_inventory()
+    inventory_df = pd.DataFrame.from_dict(inventory, orient='columns')
+    # Create two columns -- one two display the recipe text and the cost per recipe, the other to display the profit
+    col1, col2 = st.columns(2, gap = 'medium')
+    with col1:
+        # Display the recipe name
+        st.markdown(f'**Recipe Name:** {recipe.name}')
+        # Display the recipe ingredients
+        st.markdown('**Ingredients:**')
+        # Check to see if the name of each ingredient is in the inventory dataframe regardless of case, and if it is, display it in red
+        # If they are not in the inventory dataframe, display them in black
+        for ingredient in st.session_state.total_inventory_ingredients_cost:
+            # Display the ingredient 
+            st.markdown(f'* {ingredient[0]}: {float(ingredient[1]):.1f} {ingredient[2]} = ${float(ingredient[3]):.2f}')
+        for ingredient in st.session_state.ni_ingredients:
+            st.markdown(f'* {ingredient[0]}: {ingredient[1]} {ingredient[2]} ')
+        # Display the total cost of the recipe
+        st.markdown(f'**Total Cost of inventory ingredients:** ${st.session_state.total_inv_cost:.2f}')
+        st.markdown(f'**Total Cost of non-inventory ingredients:** ${st.session_state.total_ni_cost:.2f}')
+        st.markdown(f'**Total Cost of recipe:** ${st.session_state.total_cocktail_cost:.2f}')
+
+        
+    with col2:
+        # Calculate and display total costs and the potential profit
+        st.markdown(f'**Total cost to use up the amount of {st.session_state.chosen_spirit} in your inventory:**')
+        st.markdown(f'You can make **{int(st.session_state.total_drinks)}** of the "{recipe.name}" with the amount of {st.session_state.chosen_spirit} you have in your inventory.')
+
+        total_drinks_cost = st.session_state.total_cocktail_cost * st.session_state.total_drinks
+        st.write(f'The total cost of the recipe for {int(st.session_state.total_drinks)} drinks is ${total_drinks_cost:.2f}.')
+        # Display the potential profit
+        st.markdown('**Potential Profit:**')
+        # Create a slider that allows the user to select the price of the drink they want to sell it for
+        st.write('Select the price you want to sell the drink for:')
+        price = st.slider('Price', min_value=10, max_value=20, value=10, step=1)
+
+        # Calculate the profit
+        total_profit = (st.session_state.total_drinks * price) - total_drinks_cost
+
+        # Profit per drink
+        profit_per_drink = price - st.session_state.total_cocktail_cost
+
+        # Display the profit
+        st.write(f'The total profit for {st.session_state.total_drinks} drinks is ${total_profit:.2f}.')
+        st.write(f'The profit per drink is ${profit_per_drink:.2f} or {(profit_per_drink / price) * 100:.2f}%.')
+
+    st.text("")
+    st.text("")
+    
+    # Set the value of the chosen_spirit to the amount from the "Total Value" column in the inventory dataframe.  Match the name of the chosen_spirit to the name in the inventory dataframe regardless of case
+    df = pd.DataFrame.from_dict(inventory, orient = 'columns')
+    total_value = df[df['Name'].str.lower() == st.session_state.chosen_spirit.lower()]['Total Value'].values[0]
+    # Note the difference in the value of the chosen_spirit in inventory and the total profit
+    st.success(f"Congratulations!  You turned \${total_value:.2f} worth of {st.session_state.chosen_spirit} into ${total_profit:.2f} worth of profit!")
 
 if st.session_state.inventory_page == 'get_inventory_choice':
     get_inventory_choice()
@@ -257,4 +329,6 @@ elif st.session_state.inventory_page == 'create_cocktail':
     create_cocktail()
 elif st.session_state.inventory_page == 'display_recipe':
     display_recipe()
+elif st.session_state.inventory_page == 'display_cost':
+    display_cost()
 

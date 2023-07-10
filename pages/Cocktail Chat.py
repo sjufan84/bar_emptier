@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_chat import message
 from utils.chat_utils import ChatService, Context
+from utils.cocktail_functions import RecipeService
 import uuid
 import openai
 import os
@@ -41,8 +42,6 @@ chat_service = ChatService(session_id=st.session_state.session_id)
 
 
 def app():
-
-    st.write(st.session_state.bar_chat_page)
     if st.session_state.bar_chat_page == "chat_choice":
         get_chat_choice()
     elif st.session_state.bar_chat_page == "display_chat":
@@ -76,13 +75,15 @@ def get_chat_choice():
         st.experimental_rerun()
 
 def display_chat():
-    st.session_state.i += 1
-    chat_service = ChatService(session_id=st.session_state.session_id)
-    st.write(chat_service.chat_history)
-    st.stop()
+    session_id = st.session_state.session_id
+    chat_service = ChatService(session_id=session_id)
+    recipe_service = RecipeService(session_id=session_id)
+    recipe = recipe_service.load_recipe()
     chat_history = chat_service.chat_history
+    
+
     if len(chat_history) == 2 and st.session_state.context == Context.RECIPE:
-        initial_prompt = f"What questions can I answer about the {chat_service.recipe}" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
+        initial_prompt = f"What questions can I answer about the {recipe.name}?" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
         message(initial_prompt, is_user=False, avatar_style = 'miniavs', seed='Spooky')
 
     chat_container = st.container()
@@ -99,7 +100,6 @@ def display_chat():
     submit_button = st.button("Submit")
 
     if submit_button:
-        st.session_state.i+=1
 
         with st.spinner("Thinking..."):
             chat_service.get_bartender_response(question=user_input, session_id=st.session_state.session_id)
@@ -146,18 +146,6 @@ def display_chat():
 
 app()
 
-
-
-
-
-
-    
-#st.sidebar.markdown("---")
-#st.sidebar.header("Instructions")
-#st.sidebar.markdown("1. Select a chef from the dropdown menu.")
-#st.sidebar.markdown("2. Click 'Start Conversation' to display the chef's message.")
-#st.sidebar.markdown("3. Enter your recipe specifications and click 'Generate Recipe'.")
-#st.sidebar.markdown("4. Ask follow-up questions about the recipe.")
 
 
 

@@ -219,17 +219,6 @@ def display_recipe():
         <p>AI cocktail image generated using the Stable Diffusion API by <a href="https://deepai.org/" target="_blank">DeepAI</a></p>
         </div>''', unsafe_allow_html=True)
         st.warning('**Note:** The actual cocktail may not look exactly like this!')
-        # Save the selected recipe as a PDF
-
-        # Save the selected recipe as a PDF
-            # pdf_path = save_recipe_as_pdf(st.session_state.recipe, f"{st.session_state.cocktail_name}")
-
-        # Generate a download link for the saved PDF
-        # download_link = get_recipe_pdf_download_link(pdf_path, f"{st.session_state.cocktail_name}.pdf")
-
-        # Display the download link in a centered div
-        # st.markdown(f'''<div style="text-align: center;">
-        # <p>{download_link}</p>''', unsafe_allow_html=True)
 
         # Create an option to chat about the recipe
         chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
@@ -241,13 +230,6 @@ def display_recipe():
             st.session_state.bar_chat_page = 'display_chat'
             switch_page("Cocktail Chat")
             
-    
-        # Create a "Create another cocktail" button
-        create_another_cocktail_button = st.button('Create another cocktail', type = 'primary', use_container_width=True)
-        if create_another_cocktail_button:
-            st.session_state.cocktail_page = "get_cocktail_info"
-            st.experimental_rerun()
-
     # Display the feedback form
     st.markdown('---')
     st.markdown('''<div style="text-align: center;">
