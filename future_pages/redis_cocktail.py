@@ -1,26 +1,31 @@
+"""
+This file contains the functions and classes necessary to create a cocktail recipe using the OpenAI API and manage 
+the state of the chat using Redis.
+"""
+
+
 # Importing the necessary libraries
 import os
 import openai
 import streamlit as st
-import os
 import requests
-from langchain.output_parsers import PydanticOutputParser
-from utils.inventory_functions import InventoryService
 from pydantic import BaseModel, Field
+from langchain.output_parsers import PydanticOutputParser
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate
 from typing import List, Optional, Union
-import re
 import pandas as pd
 from redis import Redis as RedisStore
 import json
 import uuid
-
-
-
-
-
 from dotenv import load_dotenv
+from utils.inventory_functions import InventoryService
+
+
+
+
+
+# Load the .env file
 load_dotenv()
 
 # Get the OpenAI API key and org key from the .env file
@@ -56,8 +61,8 @@ class CocktailIngredient(BaseModel):
 class CocktailRecipe(BaseModel):
     name: str = Field(description="Name of the cocktail recipe")
     ingredient_names: List[str] = Field(description="A list of the names of the ingredients in the cocktail.")
-    ingredient_amounts: List[Union[float, int, str, None]]  = Field(description="A list of the amounts of the ingredients in the cocktail.  If the amount is not specified,\
-                                                      this will be None.")
+    ingredient_amounts: List[Union[float, int, str, None]]  = Field(description="""A list of the amounts of the ingredients in the cocktail.\
+    If the amount is not specified, this will be None.""")
     ingredient_units: List[Union[str, int, None]] = Field(description="A list of the units of the ingredients in the cocktail.")
     instructions: List[str] = Field(description="Instructions for preparing the cocktail")
     garnish: str = Field(description="Garnish for the cocktail")
@@ -100,14 +105,16 @@ class RecipeService:
         
         messages = [
         {
-            "role": "system", "content" : f"You are a bar manager helping the user estimate the cost of ingredients {ingredients} in a cocktail you created for them.\
-                Each ingredient in the list has the following format: (ingredient name, amount, unit).  Do your best to estimate the total cost of the ingredients\
-                in the cocktail as a float in the following format: {cost_parser.get_format_instructions()}.  This is only an estimate, so you do not need to be exact.\
-                Just approximate the cost and return it as a float."
+            "role": "system", "content" : f"You are a bar manager helping the user estimate the cost of ingredients {ingredients}\
+            in a cocktail you created for them. Each ingredient in the list has the following format: (ingredient name, amount, unit).\
+            Do your best to estimate the total cost of the ingredients in the cocktail as a float in the following format:\
+            {cost_parser.get_format_instructions()}.  This is only an estimate, so you do not need to be exact.\
+            Just approximate the cost and return it as a float."
         },
         {   
-            "role": "user", "content": f"Given the ingredients and their amounts in {ingredients}, can you help me estimate the total cost of the ingredients?  It's okay\
-                if you don't know the exact cost.  Just give me your best guess as a float in the following format: {cost_parser.get_format_instructions()}"
+            "role": "user", "content": f"Given the ingredients and their amounts in {ingredients}, can you help me estimate the total cost\
+            of the ingredients?  It's okay if you don't know the exact cost.  Just give me your best guess as a float in the following format:\
+            {cost_parser.get_format_instructions()}"
         },
         ]
 
@@ -175,8 +182,8 @@ class RecipeService:
     def save_recipe(self):  
         try:
             redis_store.set(f'{self.session_id}_recipe', json.dumps(self.recipe.dict()))
-        except Exception as e:
-            print(f"Failed to save recipe to Redis: {e}")
+        except:
+            print(f"Failed to save recipe to Redis")
 
     # Define a function to load the recipe from redis and convert it to a CocktailRecipe object
     def load_recipe(self):
@@ -187,8 +194,8 @@ class RecipeService:
                 return CocktailRecipe(**recipe)
             else:
                 return None
-        except Exception as e:
-            print(f"Failed to load recipe from Redis: {e}")
+        except:
+            print(f"Failed to load recipe from Redis")
             return None
         
     # Define a function to check to make sure all of the fields are filled out
@@ -290,8 +297,8 @@ class RecipeService:
                     self.save_recipe()
                     # Return the recipe
                     return parsed_recipe
-                except Exception as e:
-                    print(f"Failed to parse recipe: {e}")
+                except:
+                    print(f"Failed to parse recipe")
                     continue
             except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
@@ -352,8 +359,8 @@ class RecipeService:
                     self.save_recipe()
                     # Return the recipe
                     return recipe
-                except Exception as e:
-                    print(f"Failed to parse recipe: {e}")
+                except:
+                    print(f"Failed to parse recipe")
             except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
                             

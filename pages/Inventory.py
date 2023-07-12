@@ -1,17 +1,23 @@
-# This is a page to allow the user to upload their bar inventory to be used in the cocktail creation process
+"""
+This is a page to allow the user to upload their bar 
+inventory to be used in the cocktail creation process
+"""
 
 # Initial imports
+import openai
+import pandas as pd
+import os
 import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
+from dotenv import load_dotenv
+
+# Import the services and utils
 from utils.inventory_functions import InventoryService
 from utils.image_utils import generate_image
 from utils.cocktail_functions import RecipeService
 from utils.chat_utils import ChatService, Context
-import openai
-import pandas as pd
-import os
-from streamlit_extras.switch_page_button import switch_page
-from dotenv import load_dotenv
-import uuid
+
+# Load the environment variables
 load_dotenv()
 
 # Get the OpenAI API key and org key from the .env file

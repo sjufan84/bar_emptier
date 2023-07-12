@@ -1,13 +1,21 @@
-import streamlit as st
-from streamlit_chat import message
-from utils.chat_utils import ChatService, Context
-from utils.cocktail_functions import RecipeService
-import uuid
+"""
+This is the main interface to display 
+chat interactions
+"""
+
 import openai
 import os
+import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from streamlit import components
+from streamlit_chat import message
 from dotenv import load_dotenv
+
+# Load the services and utils
+from utils.chat_utils import ChatService, Context
+from utils.cocktail_functions import RecipeService
+
+# Load the environment variables
 load_dotenv()
 
 

@@ -121,7 +121,7 @@ def text_menu_edit(menu):
     messages = [
         {
             "role": "system",
-            "content": f"You are an amazingly helpful assistant restauranteur who edits user's menus in a format to make it readable,\
+            "content": "You are an amazingly helpful assistant restauranteur who edits user's menus in a format to make it readable,\
                 if necessary, and be able to answer questions about it.."
         },
         {
@@ -185,7 +185,7 @@ def photo_menu_edit(menu):
     messages = [
         {
             "role": "system",
-            "content": f"You are an amazingly helpful assistant restauranteur who edits user's menus to make them more readable."
+            "content": "You are an amazingly helpful assistant restauranteur who edits user's menus to make them more readable."
         },
         {
             "role": "user",

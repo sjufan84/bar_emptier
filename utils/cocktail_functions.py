@@ -2,17 +2,14 @@
 import os
 import openai
 import streamlit as st
-import os
 import requests
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate
-from typing import List, Optional, Union
-import re
+from typing import List, Optional
 import pandas as pd
 from redis import Redis as RedisStore
-import json
 import uuid
 
 

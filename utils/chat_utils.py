@@ -1,14 +1,21 @@
+"""
+The primary chat utilities
+"""
+
 # Importing the necessary libraries
 import streamlit as st
 import openai
 import os
-import json
-import uuid
 from typing import Optional
 from enum import Enum
 from redis import Redis as RedisStore
-from utils.cocktail_functions import CocktailRecipe
 from dotenv import load_dotenv
+import requests
+
+# Load the services and utils
+from utils.cocktail_functions import CocktailRecipe
+
+# Load the environment variables
 load_dotenv()
 
 # Get the OpenAI API key and org key from the .env file
@@ -35,7 +42,7 @@ class ChatMessage:
 
 # Define a class for the chat service -- this is the class we will use to track the chat history and save it to redis
 class ChatService:
-    def __init__(self, recipe: Optional[CocktailRecipe] = None, chat_history: Optional[list] = []):
+    def __init__(self, chat_history: Optional[list], recipe: Optional[CocktailRecipe] = None):
        # If there is a recipe, we need to save it to the session state
         if recipe:
             self.recipe = recipe
@@ -130,15 +137,12 @@ class ChatService:
                 bartender_response = response.choices[0].message.content
                 # Append the bartender response to the chat history
                 self.add_message(role="ai", content=bartender_response)
-        
+
 
                 return bartender_response
-
-                
-
-                
-            except Exception as e:
-                print(f"Failed to generate response with model {model}: {e}")
+            
+            except requests.exceptions.RequestException, openai.error.APIError):
+                print(f"Failed to generate response with model {model}")
                 continue
 
     def get_training_bartender_response(self, question, recipe, guide):

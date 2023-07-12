@@ -1,4 +1,3 @@
-import streamlit as st
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import base64
