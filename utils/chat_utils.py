@@ -18,6 +18,9 @@ openai.organization = os.getenv("OPENAI_ORG")
 # Initialize a connection to the redis store
 redis_store = RedisStore()
 
+if 'chat_service' not in st.session_state:
+    st.session_state['chat_service'] = None
+
 # Establish the context which should be an enum with the following values: "recipe", "general_chat"
 class Context(Enum):
     RECIPE = "recipe"
@@ -32,52 +35,25 @@ class ChatMessage:
 
 # Define a class for the chat service -- this is the class we will use to track the chat history and save it to redis
 class ChatService:
-    def __init__(self, session_id : Optional[str] = None, recipe : Optional[CocktailRecipe] = None):
-        # If the session id is not provided, we will generate a new one
-        if not session_id:
-            self.session_id = str(uuid.uuid4())
-            self.chat_history = []
-            self.recipe = None
-        else:
-            self.session_id = session_id
-            # Get the chat history from redis
-            self.chat_history = self.load_chat_history()
-            # Get the recipe from redis
+    def __init__(self, recipe: Optional[CocktailRecipe] = None, chat_history: Optional[list] = []):
+       # If there is a recipe, we need to save it to the session state
+        if recipe:
             self.recipe = recipe
+        else:
+            self.recipe = None
+        if chat_history:
+            self.chat_history = chat_history
+        else:
+            self.chat_history = []
 
-    def load_chat_history(self):
-        try:
-            chat_history_json = redis_store.get(self.session_id)
-            if chat_history_json:
-                chat_history_dict = json.loads(chat_history_json)
-                return [message for message in chat_history_dict]
-            else:
-                return []
-        except Exception as e:
-            print(f"Failed to load chat history from Redis: {e}")
-            return []
 
-    def load_recipe(self):
-        try:
-            return redis_store.get(f"{self.session_id}_recipe").decode("utf-8")
-        except Exception as e:
-            print(f"Failed to load recipe from Redis: {e}")
-            return None
-
-    def save_chat_history(self):
-        try:
-            # Save the chat history to redis
-            chat_history_json = json.dumps(self.chat_history)
-            redis_store.set(self.session_id, chat_history_json)
-        except Exception as e:
-            print(f"Failed to save chat history to Redis: {e}")
-        return self.chat_history
 
 
     # Define a function to initialize the chat with an initial message.  We need to take in the
     # context and then generate the initial message based on that.  Context should be an enum with
     # the following values: "recipe", "general_chat"
     def initialize_chat(self, context: Context):
+        initial_message = None
         # Check to see if the context is "recipe" -- if it is, we need to retrieve the
         # recipe from the session state and use that to generate the initial message
         if context == Context.RECIPE:
@@ -85,15 +61,14 @@ class ChatService:
                                     "role": "system", 
                                     "content": f"""
                                     You are a master mixologist answering a user's questions 
-                                    about the recipe {self.recipe} you created for them.  Your
+                                    about the recipe {st.session_state.recipe_service.recipe} you created for them.  Your
                                     chat messages so far are {self.chat_history[1:]} 
                                     """
                                     }
             # Append the initial message to the chat history
             self.chat_history = [initial_message]
 
-            # Save the chat history to redis
-            self.save_chat_history()
+        
 
         elif context == Context.GENERAL_CHAT:
             initial_message = {
@@ -103,12 +78,9 @@ class ChatService:
                                 }
             # Append the initial message to the chat history
             self.chat_history = [initial_message]
-            
-            # Save the chat history to redis
-            self.save_chat_history()
-
-        # Return the chat history
-        return initial_message
+            return initial_message
+    
+        
 
 
     # Define a function to add a message to the chat history
@@ -127,8 +99,6 @@ class ChatService:
         # Append the message to the chat history
         self.chat_history.append(message)
 
-        # Save the chat history to redis
-        self.save_chat_history()
 
         #Save the chat history to redis
         return self.chat_history
@@ -136,16 +106,13 @@ class ChatService:
     # Define a function to clear the chat history
     def clear_chat_history(self):
         self.chat_history = []
-        self.save_chat_history()
         return self.chat_history
 
     # Define the function to answer any follow up questions the user has about the recipe
-    def get_bartender_response(self, question: str, session_id: str):
-        # Load the chat history from redis
-        chat_service = ChatService(session_id)
+    def get_bartender_response(self, question: str):
         # Append the user's question to messages
-        chat_service.add_message(role="user", content=question)
-        chat_history = chat_service.load_chat_history()
+        self.add_message(role="user", content=question)
+        chat_history = self.chat_history
         # Add the rest of the chat history to messages
         messages = chat_history
         # Define the models we want to iterate through
@@ -162,9 +129,8 @@ class ChatService:
                 )
                 bartender_response = response.choices[0].message.content
                 # Append the bartender response to the chat history
-                chat_service.add_message(role="ai", content=bartender_response)
-                # Save the chat history to Redis
-                chat_service.save_chat_history()
+                self.add_message(role="ai", content=bartender_response)
+        
 
                 return bartender_response
 
@@ -175,48 +141,47 @@ class ChatService:
                 print(f"Failed to generate response with model {model}: {e}")
                 continue
 
+    def get_training_bartender_response(self, question, recipe, guide):
+        # Check to see if there is an inventory in the session state
+        messages = [
+        {
+            "role": "system",
+            "content": f"You are a master mixologist who has provided a recipe {recipe} for the user and a training guide {guide} about\
+                which they would like to ask some follow up questions.  The conversation you have had so far is {self.chat_history}.\
+                Please respond as a friendly bartender to help them with their questions."
+        },
+        {
+            "role": "user",
+            "content": f"Thanks for the recipe and the training guide!  I need to ask you a follow up question {question}."
+        },
+        ]
 
-def get_training_bartender_response(question, recipe, guide):
-    # Check to see if there is an inventory in the session state
-    messages = [
-    {
-        "role": "system",
-        "content": f"You are a master mixologist who has provided a recipe {recipe} for the user and a training guide {guide} about\
-            which they would like to ask some follow up questions.  The conversation you have had so far is {st.session_state.history.messages}.\
-            Please respond as a friendly bartender to help them with their questions."
-    },
-    {
-        "role": "user",
-        "content": f"Thanks for the recipe and the training guide!  I need to ask you a follow up question {question}."
-    },
-    ]
+        # Use the OpenAI API to generate a recipe
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages = messages,
+                max_tokens=750,
+                frequency_penalty=0.5,
+                presence_penalty=0.75,
+                temperature=1,
+                n=1
+            )
+            st.session_state.response = response
+            response = response.choices[0].message.content
 
-    # Use the OpenAI API to generate a recipe
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages = messages,
-            max_tokens=750,
-            frequency_penalty=0.5,
-            presence_penalty=0.75,
-            temperature=1,
-            n=1
-        )
-        st.session_state.response = response
-        response = response.choices[0].message.content
+        except:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo-0301",
+                messages = messages,
+                max_tokens=500,
+                frequency_penalty=0.2,
+                temperature = 1, 
+                n=1, 
+                presence_penalty=0.2,
+            )
+            st.session_state.response = response
+            response = response.choices[0].message.content
 
-    except:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-0301",
-            messages = messages,
-            max_tokens=500,
-            frequency_penalty=0.2,
-            temperature = 1, 
-            n=1, 
-            presence_penalty=0.2,
-        )
-        st.session_state.response = response
-        response = response.choices[0].message.content
-
-    return response
+        return response
 

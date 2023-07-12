@@ -27,10 +27,10 @@ reset_pages()
 def init_chat_session_variables():
     # Initialize session state variables
     session_vars = [
-        'recipe', 'bar_chat_page', 'chat_service', 'chat_history', 'session_id', 'context', 'i'
+        'recipe', 'bar_chat_page', 'context', 'i', 'chat_service', 'recipe_service'
     ]
     default_values = [
-        None, 'chat_choice', None, [], str(uuid.uuid4()), None, 0
+        None, 'chat_choice', None, 0, ChatService(), RecipeService()
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -38,7 +38,7 @@ def init_chat_session_variables():
             st.session_state[var] = default_value
 
 init_chat_session_variables()
-chat_service = ChatService(session_id=st.session_state.session_id)
+
 
 
 def app():
@@ -48,9 +48,9 @@ def app():
         display_chat()
 
 def get_chat_choice():
-    chat_service = ChatService(session_id=st.session_state.session_id)
-
-    if st.session_state.recipe:
+    chat_service = st.session_state.chat_service
+    recipe_service = st.session_state.recipe_service
+    if recipe_service.recipe:
         st.markdown('**You have created a recipe.  Would you like to ask questions about it, or continue to a general bartender chat?**')
         continue_recipe_button = st.button("Continue with Recipe")
         general_chat_button = st.button("General Chat")
@@ -75,13 +75,12 @@ def get_chat_choice():
         st.experimental_rerun()
 
 def display_chat():
-    session_id = st.session_state.session_id
-    chat_service = ChatService(session_id=session_id)
-    recipe_service = RecipeService(session_id=session_id)
-    recipe = recipe_service.load_recipe()
+    chat_service = st.session_state.chat_service
+    recipe_service = st.session_state.recipe_service
+    recipe = recipe_service.recipe
     chat_history = chat_service.chat_history
     
-    if len(chat_history) == 1:
+    if chat_history and len(chat_history) == 1:
         initial_prompt = f"What questions can I answer about the {recipe.name}?" if st.session_state.context == Context.RECIPE else "What questions can I answer for you?"
         message(initial_prompt, is_user=False, avatar_style = 'miniavs', seed='Spooky')
 
@@ -101,11 +100,21 @@ def display_chat():
     if submit_button:
 
         with st.spinner("Thinking..."):
-            chat_service.get_bartender_response(question=user_input, session_id=st.session_state.session_id)
+            chat_service.get_bartender_response(question=user_input)
+            user_input = ""
             st.experimental_rerun()
 
     st.markdown("---")
-    
+    # Create a button to clear the chat history
+    clear_chat_history_button = st.button("Clear Chat History", type = 'primary', use_container_width=True)
+    # Upon clicking the clear chat history button, we want to reset the chat history and chat history dictionary
+    if clear_chat_history_button:
+        # Reset the chat history and chat history dictionary
+        chat_service.chat_history = []
+        chat_service.initialize_chat(context=st.session_state.context)
+        # Return to the chat home page
+        st.session_state.bar_chat_page = 'display_chat'
+        st.experimental_rerun()
     # Create a button to allow the user to create a new recipe
     create_new_recipe_button = st.button("Create a New Recipe", type = 'primary', use_container_width=True)
     # Upon clicking the create new recipe button, we want to reset the chat history and chat history dictionary
@@ -125,11 +134,9 @@ def display_chat():
     # And return to the chat home page
     if return_to_chat_home_button:
         # Reset the chat history and chat history dictionary
-        st.session_state.history = None
-        st.session_state.chat_history_dict = {}
-        st.session_state.chat_messages = []
+        chat_service.chat_history = []
         # Return to the chat home page
-        st.session_state.bar_chat_page = 'chat_choices'
+        st.session_state.bar_chat_page = 'chat_choice'
         st.experimental_rerun()
                 
 

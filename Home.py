@@ -1,6 +1,9 @@
 # This is the main demo file for the project.
 # This project will use OpenAI to help the user create cocktail recipes to help them get rid of excess inventory.
 import streamlit as st
+from utils.cocktail_functions import RecipeService
+from utils.chat_utils import ChatService
+from utils.inventory_functions import InventoryService
 from streamlit_extras.switch_page_button import switch_page
 from PIL import Image
 from streamlit import components
@@ -12,11 +15,11 @@ import pandas as pd
 def init_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'num_recipes', 'demo_page', 'menu_page', 'df', 'is_demo', 'training_page', 'bar_chat_page', 'recipe'
+        'cocktail_page', 'num_recipes', 'demo_page', 'menu_page', 'df', 'is_demo', 'training_page', 'bar_chat_page', 'recipe_service', 'chat_service', 'inventory_page', 'inventory_service'
         
     ]
     default_values = [
-        'get_cocktail_type', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type', 'chat_choice', None
+        'get_cocktail_type', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), False, 'get_training_type', 'chat_choice', RecipeService(), ChatService(), 'upload_inventory', InventoryService(None)
     ]
 
     for var, default_value in zip(session_vars, default_values):

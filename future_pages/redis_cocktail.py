@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import requests
 from langchain.output_parsers import PydanticOutputParser
+from utils.inventory_functions import InventoryService
 from pydantic import BaseModel, Field
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate
@@ -55,14 +56,13 @@ class CocktailIngredient(BaseModel):
 class CocktailRecipe(BaseModel):
     name: str = Field(description="Name of the cocktail recipe")
     ingredient_names: List[str] = Field(description="A list of the names of the ingredients in the cocktail.")
-    ingredient_amounts: List[float]  = Field(description="A list of the amounts of the ingredients in the cocktail as floats.")
-    ingredient_units: List[str] = Field(description="A list of the units of the ingredients in the cocktail.  Could be oz, splash,\
-                                                    dash, etc.")
-    ingredients_list: List[str] = Field(description="A list of the ingredients in the cocktail")
+    ingredient_amounts: List[Union[float, int, str, None]]  = Field(description="A list of the amounts of the ingredients in the cocktail.  If the amount is not specified,\
+                                                      this will be None.")
+    ingredient_units: List[Union[str, int, None]] = Field(description="A list of the units of the ingredients in the cocktail.")
     instructions: List[str] = Field(description="Instructions for preparing the cocktail")
     garnish: str = Field(description="Garnish for the cocktail")
     glass: str = Field(description="Glass to serve the cocktail in")
-    flavor_profile: Optional[str] = Field(description="Flavor profile of the cocktail")
+    flavor_profile: str = Field(description="Flavor profile of the cocktail")
 
     # Define a function to return the ingredients in a list of tuples
     @property
@@ -80,19 +80,20 @@ class NICost(BaseModel):
     total_ni_cost: float = Field(description="Total cost of non-inventory ingredients in the cocktail")
 
 cost_parser = PydanticOutputParser(pydantic_object=NICost)
-parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
 
 class RecipeService:
-    def __init__(self, recipe: Optional[CocktailRecipe] = None):
-        # Check to see if the user already has a recipe
-        if recipe is None:
-            # If the user does not have a recipe, create a new one
-            self.recipe = None
-        else:
-            # If the user already has a recipe, load it
+    def __init__(self, session_id : Optional[str] = None, recipe : CocktailRecipe = None):
+        # If the session id is not provided, we will generate a new one
+        if not session_id:
+            self.session_id = get_session_id()
             self.recipe = recipe
-
-       
+        else:
+            self.session_id = session_id
+            # See if the recipe is already in redis
+            recipe = self.load_recipe()
+            if not recipe:
+                # If the recipe is not in redis, we will create a new recipe
+                self.recipe = recipe
 
     # A function to estimate the cost of non-inventory items in a cocktail by calling gpt-3.5
     def estimate_cost_of_non_inventory_items(self, ingredients: list) -> float:
@@ -170,30 +171,46 @@ class RecipeService:
 
         return parsed_cost.total_ni_cost           
 
-    
-    # Define a function to check the recipe for completeness
-    def check_recipe_completeness(self, recipe):
-        # Check to make sure the recipe has a name
-        if recipe.name == None:
-            return False
-        if recipe.ingredients_list == None:
-            return False
-        elif recipe.ingredient_amounts == []:
-            return False
-        elif recipe.instructions == []:
-            return False
-        # If all of the above checks pass, return True
-        else:
-            return True
+    # Define a function to save the recipe to redis under the "recipe" key
+    def save_recipe(self):  
+        try:
+            redis_store.set(f'{self.session_id}_recipe', json.dumps(self.recipe.dict()))
+        except Exception as e:
+            print(f"Failed to save recipe to Redis: {e}")
 
+    # Define a function to load the recipe from redis and convert it to a CocktailRecipe object
+    def load_recipe(self):
+        try:
+            recipe = redis_store.get(f'{self.session_id}_recipe')
+            if recipe:
+                recipe = json.loads(recipe)
+                return CocktailRecipe(**recipe)
+            else:
+                return None
+        except Exception as e:
+            print(f"Failed to load recipe from Redis: {e}")
+            return None
         
+    # Define a function to check to make sure all of the fields are filled out
+    def check_recipe(self):
+        # Define the fields we want to check
+        fields = ["name", "ingredient_names", "ingredient_amounts", "ingredient_units", "instructions", "garnish", "glass", "flavor_profile"]
+        # Iterate through the fields
+        for field in fields:
+            # If the field is not filled out, return False
+            if not getattr(self.recipe, field):
+                return False
+        # If all of the fields are filled out, return True
+        return True
     
-    def cost_recipe(self):
-        total_cost = 0
+    def cost_recipe(self, session_id: str):
+        costs = []
         # This will take in a list of ingredients and return the cost of the ingredients per oz * the amount in the recipe
         # Load in the the inventory data
-        inventory_service = st.session_state.inventory_service
-        recipe = self.recipe
+        inventory_service = InventoryService(session_id)
+        # Load in the recipe data
+        recipe_service = RecipeService(session_id)
+        recipe = recipe_service.load_recipe()
         # Convert the inventory data dictionary to a dataframe
         inventory = pd.DataFrame.from_dict(inventory_service.inventory, orient="columns")
         # Filter the inventory dataframe to only include the ingredients in the recipe
@@ -201,20 +218,20 @@ class RecipeService:
             ingredient = list(ingredient)
             if ingredient[0] in inventory['Name'].values:
                 # Get the Cost per oz of the ingredient
-                cost_per_oz = inventory.loc[inventory['Name'] == ingredient[0]]['Cost per oz'].values[0]
+                cost_per_oz = inventory[inventory['Name'] == ingredient[0]]['Cost per oz'].values[0]
                 # Get the amount of the ingredient in the recipe
                 amount = ingredient[1]
                 # Get the cost of the ingredient in the recipe
-                cost = float(cost_per_oz) * float(amount)
+                cost = cost_per_oz * amount
                 # Append the cost to the list of costs
                 ingredient.append(cost)
                 st.session_state.total_inventory_ingredients_cost.append(ingredient)
-                total_cost += cost
+                costs.append(cost)  
             else:
                 st.session_state.ni_ingredients.append(ingredient)
         # Get the estimated cost of the non-inventory ingredients
-        ni_cost = self.estimate_cost_of_non_inventory_items(st.session_state.ni_ingredients)
-        st.session_state.total_inv_cost = total_cost
+        ni_cost = recipe_service.estimate_cost_of_non_inventory_items(st.session_state.ni_ingredients)
+        st.session_state.total_inv_cost = sum(costs)
         st.session_state.total_ni_cost = ni_cost
         st.session_state.total_cocktail_cost = st.session_state.total_inv_cost + (st.session_state.total_ni_cost / 4)
 
@@ -224,19 +241,19 @@ class RecipeService:
 
 
     # Define the function to call the openai API
-    def get_cocktail_recipe(self, liquor : str, theme : str, cuisine : str, cocktail_type : str, model_choice: str):
+    def get_cocktail_recipe(self, liquor : str, theme : str, cuisine : str, cocktail_type : str):
+        parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
         
         # Define the first system message.  This let's the model know what type of output\
         # we are expecting and in what format it needs to be in.
         prompt = PromptTemplate(
             template = "You are a master mixologist helping a user use up the excess liquor {liquor}\
                         they have in their inventory by creating a creative and innovative cocktail recipe.\
-                        featuring their excess liquor {liquor}.  This should be something that you would\
-                        be proud to serve to a customer or friends.\
+                        featuring their excess liquor {liquor}.\
                         The recipe should be based around a theme {theme}, cuisine type {cuisine},\
                         and the type of cocktail {cocktail_type} the user wants to make.\
                         The recipe should include the ingredient names, the ingredient amounts,\
-                             the ingredient units, the garnish, the glass, and a flavor profile. The cocktail should be returned in this format{format_instructions}.",
+                             the ingredient units, the garnish, the class, and a flavor profile. The cocktail should be returned in this format{format_instructions}.",
             input_variables = ["liquor", "theme", "cuisine", "cocktail_type"],
             partial_variables = {"format_instructions": parser.get_format_instructions()}
         )
@@ -255,89 +272,98 @@ class RecipeService:
         messages = chat_prompt.format_prompt(liquor=liquor, theme=theme, cuisine=cuisine, cocktail_type=cocktail_type).to_messages()
 
         # Create a list of models to loop through in case one fails
-        if model_choice == "gpt-3.5":
-            models = ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"]
-        else:
-            models = ["gpt-4-0613", "gpt-4"]
-        
+        models = ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", 'gpt-4-0613', 'gpt-4',]
 
         # Loop through the models and try to generate the recipe
         for model in models:
-            chat = ChatOpenAI(model = model, temperature = 1, max_retries=3)
-
             try:
+                chat = ChatOpenAI(model_name = model, temperature = 1, max_retries=3)
+
                 recipe = chat(messages).content
-                temp_parsed_recipe = parser.parse(recipe)
-                if self.check_recipe_completeness(temp_parsed_recipe):
-                    # Save the recipe to redis
-                    self.recipe = temp_parsed_recipe
-                    return temp_parsed_recipe
-            except Exception as e:
-                print(e)
+
+                try:
+                    parsed_recipe = parser.parse(recipe)
+                    self.recipe = parsed_recipe
+                    # We need to create a "recipe_text" field for the recipe to be returned to the user
+                    # This will be a string that includes all of the recipe information so that we can
+                    # Use it for functions downstream
+                    self.save_recipe()
+                    # Return the recipe
+                    return parsed_recipe
+                except Exception as e:
+                    print(f"Failed to parse recipe: {e}")
+                    continue
+            except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
-
-        
-
-                  
-           
                     
+
 
                     
             
 
     # Create a function to generate a recipe based on the user's inventory if they have one uploaded
-    def get_inventory_cocktail_recipe(self, inventory_list, liquor, cocktail_type, cuisine, theme, model_choice):
+    def get_inventory_cocktail_recipe(self, inventory_list, liquor, cocktail_type, cuisine, theme):
+        parser = PydanticOutputParser(pydantic_object=CocktailRecipe)
         messages = [
         {
              "role": "system", 
                 "content" : f"You are a master mixologist helping the user create an innovative cocktail to use up their excess liquor, {liquor}.\
-                            Return the recipe in the following format:\n{parser.get_format_instructions()}.\n" 
+                            Return the recipe in the following format:\n{parser.get_format_instructions()}\n.  Make sure all of the fields including garnish, flavor profile\
+                                glass, ingredient_amounts, ingredient_names, ingredient_units and description are filled out before returning the recipe." 
         },
         {   
             "role": "user", "content": f"Given the following parameters: the name of the liquor {liquor} I am trying to use up, the type of cocktail {cocktail_type}, the theme {theme},\
                                     and the style of cuisine {cuisine} to pair it with, please help me come up with a creative cocktail featuring {liquor} with a fun and creative name that doesn't necessarily include the name of the spirit or the theme.\
-                                    Please prioritize using the ingredients I have on hand in {inventory_list}, but if it compromises the quality of the recipe, use a different ingredient.\
+                                    Please prioritize using the ingredients I have on hand in {inventory_list}, but you can include other ingredients as well if needed.\
                                     Please be as specific as possible with your instructions."
         },
         {
-            "role":"user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n."
+            "role":"user", "content": f"Please use the following format:\n{parser.get_format_instructions()}\n. and make sure all of the fields are filled out."
         }
         ]
-         # Based on the model choicce, Create a list of models to loop through in case one fails
-        if model_choice == "gpt-3.5":
-            models = ["gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"]
-        else:
-            models = ["gpt-4-0613", "gpt-4"]
-        # Loop through the models and try to generate the recipe
-        for model in models:
-            try:
-                response = openai.ChatCompletion.create(
-                    model = model,
-                    messages = messages,
-                    max_tokens = 750, 
-                    temperature = 1,
-                    top_p = 1,
-                    frequency_penalty=0.5,
-                    n=1
-                )
 
+        # Iterate through different models for fallback
+        for model in [ "gpt-3.5-turbo-16k-0613", 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo', "gpt-4-0613", "gpt-4",]:
+            # Define the parameters for the API call
+            params = {
+                "model": model,
+                "messages": messages,
+                "max_tokens": 1250,
+                "frequency_penalty": 0.5,
+                "presence_penalty": 0.5,
+                "temperature": 1,
+                "top_p": 0.9,
+                "n": 1,
+            }
+            
+            # Call the OpenAI API and handle exceptions
+            try:
+                response = openai.ChatCompletion.create(**params)
                 recipe = response.choices[0].message.content
-                temp_parsed_recipe = parser.parse(recipe)
-                if self.check_recipe_completeness(temp_parsed_recipe):
+                try:
+                    parsed_recipe = parser.parse(recipe)
+                    
                     # Save the recipe to redis
-                    self.recipe = temp_parsed_recipe
-                    return temp_parsed_recipe
-            except Exception as e:
-                print(e)
+                    self.recipe = parsed_recipe
+                     # Verify that all of the fields are filled out
+                    if not self.check_recipe():
+                        raise Exception("Not all of the fields are filled out")
+                    # Save the recipe to redis 
+                    self.save_recipe()
+                    # Return the recipe
+                    return recipe
+                except Exception as e:
+                    print(f"Failed to parse recipe: {e}")
+            except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
                             
     # Define a function to return the total amount of drinks we can make based on the amount of the chosen spirit
     # we have in our inventory
-    def get_total_drinks(self):
-        recipe_service = st.session_state.recipe_service
-        recipe = recipe_service.recipe
-        inventory_service = st.session_state.inventory_service
-        inventory = inventory_service.inventory
+    def get_total_drinks(self, session_id: str):
+        recipe_service = RecipeService(session_id)
+        recipe = recipe_service.load_recipe()
+        inventory_service = InventoryService(session_id)
+        inventory = inventory_service.load_inventory()
         # Get the amount of the chosen spirit in the recipe
         spirit_amount = recipe.ingredients[0][1]
         # Convert the spirit amount to ml from oz
@@ -358,11 +384,11 @@ class RecipeService:
 
     
     # Create a function to display the cost of the recipe
-    def display_cost(self):
-        recipe_service = st.session_state.recipe_service
-        recipe = recipe_service.recipe
-        inventory_service = st.session_state.inventory_service
-        inventory = inventory_service.inventory
+    def display_cost(self, session_id: str):
+        recipe_service = RecipeService(session_id)
+        recipe = recipe_service.load_recipe()
+        inventory_service = InventoryService(session_id)
+        inventory = inventory_service.load_inventory()
         # Create two columns -- one two display the recipe text and the cost per recipe, the other to display the profit
         col1, col2 = st.columns(2, gap = 'medium')
         with col1:

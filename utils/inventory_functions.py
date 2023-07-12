@@ -1,10 +1,7 @@
+import os
 import streamlit as st
 import pandas as pd
 import openai
-from redis import Redis as RedisStore
-import uuid
-import os
-import json
 from dotenv import load_dotenv
 from typing import Optional
 load_dotenv()
@@ -13,67 +10,20 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
-# Initialize the session state
-if "session_id" not in st.session_state:
-    st.session_state.session_id = str(uuid.uuid4())
 if "df" not in st.session_state:
     st.session_state.df = None
 
-# Initialize a connection to the redis store
-redis_store = RedisStore()
-
-# Define an Inventory class that will handle the inventory data using Redis
-# as the data store.  The inventory will be read in from a CSV or Excel file
-# and then stored in Redis as a dictionary.  We will use the session ID_inventory
-# as the key and the dictionary as the value.  The dictionary will have the following
-
-# Define a function to return a session id if the user does not have one,
-# or to return the session id if the user already has one
-def get_session_id():
-    session_id = str(uuid.uuid4())
-    return session_id
-
-
 
 class InventoryService:
-    def __init__(self, session_id : Optional[str], inventory: Optional[dict] = None):
-        # If the session id is not provided, we will generate a new one
-        if not session_id:
-            self.session_id = get_session_id()
-            self.inventory = None
+    def __init__(self, inventory: Optional[dict] = None):
+        # If there is an inventory passed, save it to the inventory attribute
+        if inventory:
+            self.inventory = inventory
         else:
-            self.session_id = session_id
-            # See if the inventory is in redis
-            try:
-                inventory = self.load_inventory()
-                if inventory:
-                    self.inventory = inventory
-                else:
-                    self.inventory = None
-            except Exception as e:
-                print(f"Failed to load inventory from Redis: {e}")
-                self.inventory = None
+            self.inventory = None
         
     
-    # Define a function to save the recipe to redis under the "recipe" key
-    def save_inventory(self):  
-        try:
-            redis_store.set(f'{self.session_id}_inventory', json.dumps(self.inventory))
-        except Exception as e:
-            print(f"Failed to save recipe to Redis: {e}")
-
-    # Define a function to load the recipe from redis and convert it to a CocktailRecipe object
-    def load_inventory(self):
-        try:
-            inventory = redis_store.get(f'{self.session_id}_inventory')
-            if inventory:
-                inventory = json.loads(inventory)
-                return inventory
-            else:
-                return None
-        except Exception as e:
-            print(f"Failed to load recipe from Redis: {e}")
-            return None
+       
         
     # Define the function to process the file
     def process_and_format_file(self, uploaded_file):
@@ -103,7 +53,6 @@ class InventoryService:
 
         # Save the inventory to redis
         self.inventory = df.to_dict()
-        self.save_inventory()
 
         # Return the dictionary
         return df

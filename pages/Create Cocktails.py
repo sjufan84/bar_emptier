@@ -19,10 +19,10 @@ redis_store = RedisStore()
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients', 'session_id', 'context'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients', 'session_id', 'context', 'chat_service', 'recipe_service', 'inventory_service'
     ]
     default_values = [
-        'get_cocktail_info', '', '', '', None, [], '', False, [], str(uuid.uuid4()), None
+        'get_cocktail_info', '', '', '', None, [], '', False, [], str(uuid.uuid4()), None, ChatService(), RecipeService(), InventoryService()
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -72,8 +72,7 @@ spirits_list = [
 
 # Define the function to get the information about the cocktail
 def get_cocktail_type():
-    # Instantiate the InventoryService class
-    inventory_service = InventoryService(session_id=st.session_state.session_id)
+    inventory_service = st.session_state.inventory_service
     # If there is already an inventory or a menu uploaded, proceed to the cocktail creation page
     if inventory_service.inventory:
         st.session_state.inventory_page = 'choose_spirit'
@@ -107,7 +106,7 @@ def get_cocktail_type():
 
 def get_cocktail_info():
     # Instantiate the RecipeService class
-    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    recipe_service = st.session_state.recipe_service
 
     # Build the form 
     # Create the header
@@ -133,19 +132,23 @@ def get_cocktail_info():
     # Allow the user to enter a theme for the cocktail if they want
     theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
 
+    # Let the user choose the GPT model they want to use
+    gpt_model = st.radio('Which GPT model would you like to use?', ['GPT-3.5', 'GPT-4'])
+
     # Create the submit button
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            recipe_service.get_cocktail_recipe(liquor=chosen_liquor, cocktail_type=cocktail_type, cuisine=cuisine, theme=theme)
+            recipe_service.get_cocktail_recipe(liquor=chosen_liquor, cocktail_type=cocktail_type, cuisine=cuisine, theme=theme, model_choice = gpt_model)
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "display_recipe"
             st.experimental_rerun()
 
 def display_recipe():
     # Instantiate the RecipeService class
-    recipe_service = RecipeService(session_id=st.session_state.session_id)
-    recipe = recipe_service.load_recipe()
+    recipe_service = st.session_state.recipe_service
+    recipe = recipe_service.recipe
+    chat_service = st.session_state.chat_service
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h4>Here's your recipe!</h4>
@@ -160,24 +163,23 @@ def display_recipe():
         
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
-        ingredients_list = [list(ingredient) for ingredient in recipe.ingredients]
+        ingredients_list = recipe.ingredients_list
         # Convert the ingredients tuple into a list
         for ingredient in ingredients_list:
-            # Check to see if the amount ends in a 0, if so, remove the decimal
-    
-            if type(ingredient) == float and float(ingredient[1]) % 1 == 0:
-                ingredient[1] = int(ingredient[1])
-            st.markdown(f'{ingredient[1]} {ingredient[2]} {ingredient[0]}')
+            st.markdown(f'{ingredient}')
         # Display the recipe instructions
         st.markdown('**Instructions:**')
         for instruction in recipe.instructions:
             st.markdown(f'{instruction}')
         # Display the recipe garnish
-        st.markdown(f'**Garnish:** {recipe.garnish}')
+        if recipe.garnish != '':
+            st.markdown(f'**Garnish:** {recipe.garnish}')
         # Display the recipe glass
-        st.markdown(f'**Glass:** {recipe.glass}')
+        if recipe.glass != '':
+            st.markdown(f'**Glass:** {recipe.glass}')
         # Display the recipe flavor profile
-        st.markdown(f'**Flavor Profile:** {recipe.flavor_profile}') 
+        if recipe.flavor_profile != '':
+            st.markdown(f'**Flavor Profile:** {recipe.flavor_profile}') 
     with col2:
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{recipe.name}</div>', unsafe_allow_html=True)
@@ -202,7 +204,6 @@ def display_recipe():
         # Create an option to chat about the recipe
         chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
         if chat_button:
-            chat_service = ChatService(session_id=st.session_state.session_id, recipe=recipe)
             chat_service.initialize_chat(context=Context.RECIPE)
             st.session_state.context = Context.RECIPE
             st.session_state.bar_chat_page = "display_chat"

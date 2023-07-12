@@ -6,7 +6,6 @@ from utils.inventory_functions import InventoryService
 from utils.image_utils import generate_image
 from utils.cocktail_functions import RecipeService
 from utils.chat_utils import ChatService, Context
-from typing import Optional
 import openai
 import pandas as pd
 import os
@@ -25,10 +24,11 @@ openai.organization = os.getenv("OPENAI_ORG")
 def init_inventory_session_variables():
     # Initialize session state variables
     session_vars = [
-        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'session_id', 'context', 'ni_ingredients', 'total_inventory_ingredients_cost'
+        'inventory_page', 'inventory_csv_data', 'df', 'inventory_list', 'image_generated', 'context', 'ni_ingredients', 'total_inventory_ingredients_cost',
+        'inventory_service', 'recipe_service', 'chat_service'
     ]
     default_values = [
-        'get_inventory_choice', [], pd.DataFrame(), [], False, str(uuid.uuid4()), None, [], []
+        'get_inventory_choice', [], pd.DataFrame(), [], False, None, [], [], InventoryService(), RecipeService(), ChatService()
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -39,7 +39,7 @@ init_inventory_session_variables()
 
 def get_inventory_choice():
     # Instantiate the InventoryService class
-    inventory_service = InventoryService(st.session_state.session_id)
+    inventory_service = st.session_state.inventory_service
     # Allow the user to choose either to upload their own inventory or use the default inventory
     st.markdown('''<div style = text-align:center>
     <h3 style = "color: black;">Choose your inventory</h3>
@@ -60,7 +60,7 @@ def get_inventory_choice():
 # Create the function to allow the user to upload their inventory.  We will borrow this from the "Inventory Cocktails" page
 def upload_inventory():
     # Instantiate the InventoryService class
-    inventory_service = InventoryService(st.session_state.session_id)
+    inventory_service = st.session_state.inventory_service
     # Set the page title
     st.markdown('''
     <div style = text-align:center>
@@ -89,8 +89,9 @@ def upload_inventory():
 # We will use the new st.data_editor library to allow for dynamic display of the inventory dataframe
 # and the ability to let the user interact with it and select the spirit from their inventory
 def choose_spirit():
-    inventory_service = InventoryService(st.session_state.session_id)
-    inventory = inventory_service.load_inventory()
+    # Instantiate the InventoryService class
+    inventory_service = st.session_state.inventory_service
+    inventory = inventory_service.inventory
     # Create a dataframe from the inventory dictionary
     inventory_df = pd.DataFrame.from_dict(inventory, orient="columns")
     # Insert a "Use in Cocktail" column as the first column and set it to False for all rows
@@ -143,7 +144,7 @@ def choose_spirit():
 
 def create_cocktail():
     # Instantiate the RecipeService class
-    recipe_service = RecipeService(session_id=st.session_state.session_id)
+    recipe_service = st.session_state.recipe_service
     # Build the form 
     # Create the header
     st.markdown('''<div style="text-align: center;">
@@ -171,22 +172,26 @@ def create_cocktail():
     # Allow the user to enter a theme for the cocktail if they want
     theme = st.text_input('What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None')
 
+    # Allow the user to select the GPT model to use
+    model = st.selectbox('Which model would you like to use?', ['gpt-3.5', 'gpt-4'])
+
     # Create the submit button
     cocktail_submit_button = st.button(label='Create your cocktail!')
     if cocktail_submit_button:
         with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            recipe_service.get_inventory_cocktail_recipe(st.session_state.inventory_list, chosen_liquor, cocktail_type, cuisine, theme)
-            st.session_state.image_generated = False
-            st.session_state.inventory_page = "display_recipe"
-            st.experimental_rerun()
+            recipe = recipe_service.get_inventory_cocktail_recipe(st.session_state.inventory_list, chosen_liquor, cocktail_type, cuisine, theme, model)
+            if recipe:
+                st.session_state.image_generated = False
+                st.session_state.inventory_page = "display_recipe"
+                st.experimental_rerun()
 
 
 def display_recipe():
     # Instantiate the RecipeService class
-    recipe_service = RecipeService(session_id=st.session_state.session_id)
-    chat_service = ChatService(session_id=st.session_state.session_id)
+    recipe_service = st.session_state.recipe_service    
+    chat_service = st.session_state.chat_service
     # Load the recipe
-    recipe = recipe_service.load_recipe()
+    recipe = recipe_service.recipe
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h4>Here's your recipe!</h4>
@@ -200,12 +205,17 @@ def display_recipe():
         # Display the recipe ingredients
         st.markdown('**Ingredients:**')
         # If there are inventory ingredients, display them in red
-        for ingredient in recipe.ingredients:
+        for ingredient in recipe.ingredient_names:
                 # If the ingredient is in the inventory, display it in red
-            if ingredient[0] in st.session_state.inventory_list:
-                st.markdown(f'* :red[{ingredient[0]}: {ingredient[1]} {ingredient[2]}]')
+            if ingredient in st.session_state.inventory_list:
+                # Get the index of the ingredient in the ingredient_names list
+                index = recipe.ingredient_names.index(ingredient)
+                # Display the ingredient in red
+                st.markdown(f'* <div style="color:red;">{recipe.ingredients_list[index]}</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'* {ingredient[0]}: {ingredient[1]} {ingredient[2]}')
+                index = recipe.ingredient_names.index(ingredient)
+                # Display the ingredient in black
+                st.markdown(f'* {recipe.ingredients_list[index]}')
         # Let the user know the key to the colors
         st.markdown('<div style="color: red;">* Red ingredients are ones that you have in your inventory.</div>', unsafe_allow_html=True)
         
@@ -216,11 +226,15 @@ def display_recipe():
         for instruction in recipe.instructions:
             st.markdown(f'* {instruction}')
         # Display the recipe garnish
-        st.markdown(f'**Garnish:**  {recipe.garnish}')
+        if recipe.garnish != "":
+            st.markdown(f'**Garnish:**  {recipe.garnish}')
         # Display the recipe glass
-        st.markdown(f'**Glass:**  {recipe.glass}')
-        # Display the flavor profile
-        st.markdown(f'**Flavor Profile:**  {recipe.flavor_profile}')
+        if recipe.glass != "":
+            st.markdown(f'**Glass:**  {recipe.glass}')
+        # Display the flavor profile if there is one
+        if recipe.flavor_profile != "":
+            st.markdown(f'**Flavor Profile:**  {recipe.flavor_profile}')
+
     with col2:
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{recipe.name}</div>', unsafe_allow_html=True)
@@ -245,7 +259,7 @@ def display_recipe():
         # Create an option to chat about the recipe
         chat_button = st.button('Questions about the recipe?  Click here to chat with a bartender about it.', type = 'primary', use_container_width=True)
         if chat_button:
-            chat_service = ChatService(session_id=st.session_state.session_id, recipe=recipe)
+            chat_service = st.session_state.chat_service
             chat_service.initialize_chat(context=Context.RECIPE)
             st.session_state.context = Context.RECIPE
             st.session_state.bar_chat_page = "display_chat"
@@ -254,8 +268,8 @@ def display_recipe():
         # Create an option to cost out the recipe
         cost_button = st.button('Calculate the cost and potential profit of this recipe.', type = 'primary', use_container_width=True)
         if cost_button:
-            recipe_service.cost_recipe(session_id=st.session_state.session_id)
-            recipe_service.get_total_drinks(session_id=st.session_state.session_id)
+            recipe_service.cost_recipe()
+            recipe_service.get_total_drinks()
             st.session_state.inventory_page = "display_cost"
             st.experimental_rerun()
 
@@ -272,13 +286,12 @@ def display_recipe():
 
 # Define a function to display the cost of the recipe -- we will use the RecipeService class to do this
 # Create a function to display the cost of the recipe
-def display_cost(session_id : Optional[str] = None):
-    chat_service = ChatService(session_id=st.session_state.session_id)
-    session_id = st.session_state.session_id
-    recipe_service = RecipeService(session_id)
-    recipe = recipe_service.load_recipe()
-    inventory_service = InventoryService(session_id)
-    inventory = inventory_service.load_inventory()
+def display_cost():
+    chat_service = st.session_state.chat_service
+    recipe_service = st.session_state.recipe_service
+    recipe = recipe_service.recipe
+    inventory_service = st.session_state.inventory_service
+    inventory = inventory_service.inventory
     # Create two columns -- one two display the recipe text and the cost per recipe, the other to display the profit
     col1, col2 = st.columns(2, gap = 'medium')
     with col1:
@@ -294,9 +307,10 @@ def display_cost(session_id : Optional[str] = None):
         for ingredient in st.session_state.ni_ingredients:
             st.markdown(f'* {ingredient[0]}: {ingredient[1]} {ingredient[2]} ')
         # Display the total cost of the recipe
+        st.session_state.total_cocktail_cost = st.session_state.total_inv_cost + (st.session_state.total_ni_cost/4)
         st.markdown(f'**Total Cost of inventory ingredients:** ${st.session_state.total_inv_cost:.2f}')
-        st.markdown(f'**Total Cost of non-inventory ingredients:** ${st.session_state.total_ni_cost:.2f}')
-        st.markdown(f'**Total Cost of recipe:** ${st.session_state.total_cocktail_cost:.2f}')
+        st.markdown(f'**Total Cost of non-inventory ingredients:** ${st.session_state.total_ni_cost/4:.2f}')
+        st.markdown(f'**Total Cost of recipe:** ${(st.session_state.total_cocktail_cost):.2f}')
 
         
     with col2:
@@ -319,7 +333,7 @@ def display_cost(session_id : Optional[str] = None):
         profit_per_drink = price - st.session_state.total_cocktail_cost
 
         # Display the profit
-        st.write(f'The total profit for {st.session_state.total_drinks} drinks is ${total_profit:.2f}.')
+        st.write(f'The total profit for {int(st.session_state.total_drinks)} drinks is ${total_profit:.2f}.')
         st.write(f'The profit per drink is ${profit_per_drink:.2f} or {(profit_per_drink / price) * 100:.2f}%.')
 
          # Create an option to get a new recipe
@@ -329,8 +343,9 @@ def display_cost(session_id : Optional[str] = None):
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "get_cocktail_type"
             # Clear the recipe and chat history
-            chat_service.chat_history = None
-            recipe_service.recipe = None
+            chat_service.chat_history = []
+            recipe_service = RecipeService()
+            switch_page('Create Cocktails')
             st.experimental_rerun()
 
     st.text("")
