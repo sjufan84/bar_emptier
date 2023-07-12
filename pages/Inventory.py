@@ -24,6 +24,9 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
+# Define the page config
+st.set_page_config(page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="collapsed")
+
 
 
 # Initialize the session state
@@ -44,13 +47,19 @@ def init_inventory_session_variables():
 init_inventory_session_variables()
 
 def get_inventory_choice():
+    st.markdown("#### Documentation notes:")
+    st.success('''
+           **This is the beginning of the inventory aware cocktail generation functionality.  Currently I am just allowing for the use
+           of the dummy inventory, but want to add the ability to allow the user to upload their own inventory.**
+            ''')
+    st.markdown('---')
     # Instantiate the InventoryService class
     inventory_service = st.session_state.inventory_service
     # Allow the user to choose either to upload their own inventory or use the default inventory
     st.markdown('''<div style = text-align:center>
     <h3 style = "color: black;">Choose your inventory</h3>
                 </div>''', unsafe_allow_html=True)
-    inventory_choice = st.selectbox('Inventory Choice', ['Upload my own inventory', 'Use the default inventory'], index = 0, key = 'inventory_choice')
+    inventory_choice = st.selectbox('Inventory Choice', ['Use the default inventory'], index = 0, key = 'inventory_choice')
     choice_submit_button = st.button('Submit', use_container_width=True, type = 'primary')
     if choice_submit_button:
         if inventory_choice == 'Upload my own inventory':
@@ -95,6 +104,13 @@ def upload_inventory():
 # We will use the new st.data_editor library to allow for dynamic display of the inventory dataframe
 # and the ability to let the user interact with it and select the spirit from their inventory
 def choose_spirit():
+    st.markdown("#### Documentation notes:")
+    st.success('''
+           **The user can choose the spirit from the inventory that they would like to feature in their cocktail.  In this mode,
+            the model will prioritize using other ingredients from the inventory to minimize the need to bring in outside items,
+            but is prompted not to do so if it would compromise the quality of the cocktail.**
+            ''')
+    st.markdown('---')
     # Instantiate the InventoryService class
     inventory_service = st.session_state.inventory_service
     inventory = inventory_service.inventory
@@ -149,6 +165,12 @@ def choose_spirit():
 # Create the function to allow the user to create their cocktail.  We will be repurposing the existing "Create Cocktail" page
 
 def create_cocktail():
+    st.markdown("#### Documentation notes:")
+    st.success('''
+           **This is very similar to the main create cocktail feature, but calls the function that prompts
+            the model to prioritize inventory items instead of the main cocktail generating function.**
+            ''')
+    st.markdown('---')
     # Instantiate the RecipeService class
     recipe_service = st.session_state.recipe_service
     # Build the form 
@@ -193,6 +215,12 @@ def create_cocktail():
 
 
 def display_recipe():
+    st.markdown("#### Documentation notes:")
+    st.success('''
+           **Here we display the generated inventory recipe.  The user is then given multiple options to chat about the recipe, cost out
+            the recipe, or generate a training guide for the recipe.**
+            ''')
+    st.markdown('---')
     # Instantiate the RecipeService class
     recipe_service = st.session_state.recipe_service    
     chat_service = st.session_state.chat_service
@@ -279,6 +307,16 @@ def display_recipe():
             st.session_state.inventory_page = "display_cost"
             st.experimental_rerun()
 
+        # Create an option to generate a training guide
+        training_guide_button = st.button('Click here to generate a training guide for this recipe.', type = 'primary', use_container_width=True)
+        if training_guide_button:
+            # Generate the training guide
+            st.session_state.is_inventory_recipe = True
+            training_guide = recipe_service.generate_training_guide()
+            st.session_state.training_guide = training_guide
+            switch_page('Training')
+            st.experimental_rerun()
+
          # Create an option to get a new recipe
         new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
         if new_recipe_button:
@@ -286,13 +324,20 @@ def display_recipe():
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "get_cocktail_type"
             # Clear the recipe and chat history
-            chat_service.chat_history = None
+            chat_service.chat_history = []
             recipe_service.recipe = None
             st.experimental_rerun()
 
 # Define a function to display the cost of the recipe -- we will use the RecipeService class to do this
 # Create a function to display the cost of the recipe
 def display_cost():
+    st.markdown("#### Documentation notes:")
+    st.success('''
+           **This feature pulls the cost of the amount of the inventory ingredients from the inventory data,
+            and then passes the rest of the ingredients to an LLM to estimate the cost.  The total cost is then
+            utilized to present cost information to the user.**
+            ''')
+    st.markdown('---')
     chat_service = st.session_state.chat_service
     recipe_service = st.session_state.recipe_service
     recipe = recipe_service.recipe

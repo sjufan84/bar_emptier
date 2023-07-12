@@ -298,7 +298,7 @@ class RecipeService:
                     # Return the recipe
                     return parsed_recipe
                 except:
-                    print(f"Failed to parse recipe")
+                    print("Failed to parse recipe")
                     continue
             except (requests.exceptions.RequestException, openai.error.APIError):
                 continue
@@ -370,7 +370,7 @@ class RecipeService:
         recipe_service = RecipeService(session_id)
         recipe = recipe_service.load_recipe()
         inventory_service = InventoryService(session_id)
-        inventory = inventory_service.load_inventory()
+        inventory = inventory_service.inventory
         # Get the amount of the chosen spirit in the recipe
         spirit_amount = recipe.ingredients[0][1]
         # Convert the spirit amount to ml from oz
@@ -395,7 +395,7 @@ class RecipeService:
         recipe_service = RecipeService(session_id)
         recipe = recipe_service.load_recipe()
         inventory_service = InventoryService(session_id)
-        inventory = inventory_service.load_inventory()
+        inventory = inventory_service.inventory
         # Create two columns -- one two display the recipe text and the cost per recipe, the other to display the profit
         col1, col2 = st.columns(2, gap = 'medium')
         with col1:
@@ -446,4 +446,4 @@ class RecipeService:
         df = pd.DataFrame.from_dict(inventory, orient = 'records')
         total_value = df[df['Name'].str.lower() == st.session_state.chosen_spirit.lower()]['Total Value'].values[0]
         # Note the difference in the value of the chosen_spirit in inventory and the total profit
-        st.success(f"Congratulations!  You turned \${total_value:.2f} worth of {st.session_state.chosen_spirit} into ${total_profit:.2f} worth of profit!")
+        st.success(f"Congratulations!  You turned ${total_value:.2f} worth of {st.session_state.chosen_spirit} into ${total_profit:.2f} worth of profit!")

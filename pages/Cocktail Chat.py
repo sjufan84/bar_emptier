@@ -23,6 +23,17 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 openai.organization = os.getenv("OPENAI_ORG")
 
+# Define the page config
+st.set_page_config(page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="collapsed")
+
+st.markdown("#### Documentation notes:")
+st.success('''
+           **This is the main chat page.  This can be either a general chat or a recipe chat that takes the generated
+           recipe into context when answering questions.**
+              ''')
+st.markdown('---')
+
+
 # Define a function to reset the other pages to their default state
 def reset_pages():
     st.session_state.cocktail_page = 'get_cocktail_info'
@@ -68,11 +79,13 @@ def get_chat_choice():
             st.session_state.context = context
             chat_service.initialize_chat(context=context)
             st.session_state.bar_chat_page = 'display_chat'
+            st.experimental_rerun()
         elif general_chat_button:
             context = Context.GENERAL_CHAT
             st.session_state.context = context
             chat_service.initialize_chat(context=context)
             st.session_state.bar_chat_page = 'display_chat'
+            st.experimental_rerun()
     
 
     else:
@@ -129,7 +142,7 @@ def display_chat():
     # And return to the recipe creation page
     if create_new_recipe_button:
         # Reset the chat history and chat history dictionary
-        chat_service.chat_history = None
+        chat_service.chat_history = []
         # Return to the recipe creation page
         st.session_state.bar_chat_page = 'get_cocktail_type'
         switch_page("Create Cocktails")

@@ -1,28 +1,45 @@
-# This is the main entry point for the user to create cocktails
+"""
+ This is the main entry point for the user to create cocktails
+"""
 
 # Import libraries
 import streamlit as st
-# from utils.save_recipes import save_recipe_as_pdf, get_recipe_pdf_download_link
-from utils.cocktail_functions import RecipeService
-from utils.chat_utils import ChatService, Context
-from utils.inventory_functions import InventoryService
 from streamlit_extras.switch_page_button import switch_page
-from utils.image_utils import generate_image 
 from streamlit import components
 from PIL import Image
 from redis import Redis as RedisStore
 import uuid
 
+from utils.image_utils import generate_image 
+from utils.cocktail_functions import RecipeService
+from utils.chat_utils import ChatService, Context
+from utils.inventory_functions import InventoryService
+
 redis_store = RedisStore()
+
+
+# Define the page config
+st.set_page_config(page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="collapsed")
+
+st.markdown("#### Documentation notes:")
+st.success('''
+           **This is the primary cocktail generation page.  The user will be given the option to either create a cocktail with
+           or without inventory context.**
+              ''')
+st.markdown('---')
+
 
 # Initialize the session state
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
-        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 'image_generated', 'ingredients', 'session_id', 'context', 'chat_service', 'recipe_service', 'inventory_service'
+        'cocktail_page', 'cocktail_recipe', 'food_menu', 'drink_menu', 'image', 'inventory_list', 'cocktail_name', 
+        'image_generated', 'ingredients', 'session_id', 'context', 'chat_service', 'recipe_service', 'inventory_service',
+        'training_guide'
     ]
     default_values = [
-        'get_cocktail_info', '', '', '', None, [], '', False, [], str(uuid.uuid4()), None, ChatService(), RecipeService(), InventoryService()
+        'get_cocktail_info', '', '', '', None, [], '', False, [], str(uuid.uuid4()), None, ChatService(),
+        RecipeService(), InventoryService(), ""
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -75,9 +92,17 @@ def get_cocktail_type():
     inventory_service = st.session_state.inventory_service
     # If there is already an inventory or a menu uploaded, proceed to the cocktail creation page
     if inventory_service.inventory:
-        st.session_state.inventory_page = 'choose_spirit'
-        switch_page('Inventory')
-        st.experimental_rerun()
+        st.markdown("**You have an uploaded inventory.  Would you like to use it to create a cocktail?\
+                    If not, select 'Create non-inventory cocktail' below.**")
+        use_inventory_button = st.button('Use Uploaded Inventory', use_container_width=True, type = 'primary')
+        if use_inventory_button:
+            st.session_state.inventory_page = 'choose_spirit'
+            switch_page('Inventory')
+            st.experimental_rerun()
+        create_ni_cocktail_button = st.button('Create non-inventory cocktail', use_container_width=True, type = 'primary')
+        if create_ni_cocktail_button:
+            st.session_state.cocktail_page = 'get_cocktail_info'
+            st.experimental_rerun()
     else:    
         st.markdown('''<div style="text-align: center;">
         <h3>Welcome to the Cocktail Creator!</h3>
@@ -148,6 +173,7 @@ def display_recipe():
     # Instantiate the RecipeService class
     recipe_service = st.session_state.recipe_service
     recipe = recipe_service.recipe
+
     chat_service = st.session_state.chat_service
     # Create the header
     st.markdown('''<div style="text-align: center;">
@@ -209,6 +235,15 @@ def display_recipe():
             st.session_state.bar_chat_page = "display_chat"
             switch_page('Cocktail Chat')
 
+        # Create an option to generate a training guide
+        training_guide_button = st.button('Click here to generate a training guide for this recipe.', type = 'primary', use_container_width=True)
+        if training_guide_button:
+            # Generate the training guide
+            training_guide = recipe_service.generate_training_guide()
+            st.session_state.training_guide = training_guide
+            switch_page('Training')
+            st.experimental_rerun()
+
         # Create an option to get a new recipe
         new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
         if new_recipe_button:
@@ -216,7 +251,7 @@ def display_recipe():
             st.session_state.image_generated = False
             st.session_state.cocktail_page = "get_cocktail_type"
             # Clear the recipe and chat history
-            chat_service.chat_history = None
+            chat_service.chat_history = []
             recipe_service.recipe = None
             st.experimental_rerun()
             

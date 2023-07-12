@@ -13,20 +13,29 @@ from utils.cocktail_functions import RecipeService
 from utils.chat_utils import ChatService
 from utils.inventory_functions import InventoryService
 
+# Define the page config
+st.set_page_config(page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="collapsed")
+
+st.markdown("#### Documentation notes:")
+st.success('''
+           **The landing page.  Allows the user to choose to have a general chat with a bartender, or create a recipe.
+           Once the recipe is created, they will have the option to initiate a chat about the recipe along with several other features.**
+              ''')
+st.markdown('---')
+
 
 # Initialize the session state
 def init_session_variables():
     # Initialize session state variables
     session_vars = [
         'cocktail_page', 'num_recipes', 'demo_page', 'menu_page', 'df',
-        'is_demo', 'training_page', 'bar_chat_page', 'recipe_service', 'chat_service',
-        'inventory_page', 'inventory_service'
-        
+        'is_demo', 'bar_chat_page', 'recipe_service', 'chat_service',
+        'inventory_page', 'inventory_service', 'training_guide', 'is_inventory_recipe'
     ]
     default_values = [
         'get_cocktail_type', 0, 'upload_inventory', 'upload_menus', pd.DataFrame(), 
-        False, 'get_training_type', 'chat_choice', RecipeService(), ChatService(), 
-        'upload_inventory', InventoryService(None)
+        False, 'chat_choice', RecipeService(), ChatService(), 
+        'upload_inventory', InventoryService(None), "", False
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -52,6 +61,7 @@ st.markdown('''<div style="text-align: center;">
 <h2 class="title">BarKeepAI</h2>
 <p style "font-weight:100px;">The app that finally answers the question: "What the hell am I going to do with these 17 bottles of Frangelico that someone accidentally ordered?"</p>
 </div>''', unsafe_allow_html=True)
+st.text('')
 # Create two columns for the home page
 col1, col2 = st.columns(2, gap="large")
 # With the first column we will display a picture of a cocktail with a "Create a Cocktail" button underneath

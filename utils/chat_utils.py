@@ -6,14 +6,12 @@ The primary chat utilities
 import streamlit as st
 import openai
 import os
-from typing import Optional
 from enum import Enum
 from redis import Redis as RedisStore
 from dotenv import load_dotenv
 import requests
+from typing import Optional, List
 
-# Load the services and utils
-from utils.cocktail_functions import CocktailRecipe
 
 # Load the environment variables
 load_dotenv()
@@ -25,8 +23,6 @@ openai.organization = os.getenv("OPENAI_ORG")
 # Initialize a connection to the redis store
 redis_store = RedisStore()
 
-if 'chat_service' not in st.session_state:
-    st.session_state['chat_service'] = None
 
 # Establish the context which should be an enum with the following values: "recipe", "general_chat"
 class Context(Enum):
@@ -42,16 +38,15 @@ class ChatMessage:
 
 # Define a class for the chat service -- this is the class we will use to track the chat history and save it to redis
 class ChatService:
-    def __init__(self, chat_history: Optional[list], recipe: Optional[CocktailRecipe] = None):
-       # If there is a recipe, we need to save it to the session state
-        if recipe:
-            self.recipe = recipe
-        else:
-            self.recipe = None
-        if chat_history:
-            self.chat_history = chat_history
-        else:
+    def __init__(self, chat_history : Optional[List[ChatMessage]] = None):
+        # Initialize the chat history
+        if chat_history is None:
             self.chat_history = []
+        else:
+            self.chat_history = chat_history
+        
+
+    
 
 
 
@@ -141,7 +136,7 @@ class ChatService:
 
                 return bartender_response
             
-            except requests.exceptions.RequestException, openai.error.APIError):
+            except (requests.exceptions.RequestException, openai.error.APIError):
                 print(f"Failed to generate response with model {model}")
                 continue
 
@@ -188,4 +183,8 @@ class ChatService:
             response = response.choices[0].message.content
 
         return response
+    
+
+if 'chat_service' not in st.session_state:
+    st.session_state['chat_service'] = ChatService()
 

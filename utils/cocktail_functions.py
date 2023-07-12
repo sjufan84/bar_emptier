@@ -7,7 +7,7 @@ from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate, HumanMessagePromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate
-from typing import List, Optional
+from typing import List, Optional, Union
 import pandas as pd
 from redis import Redis as RedisStore
 import uuid
@@ -52,7 +52,7 @@ class CocktailIngredient(BaseModel):
 class CocktailRecipe(BaseModel):
     name: str = Field(description="Name of the cocktail recipe")
     ingredient_names: List[str] = Field(description="A list of the names of the ingredients in the cocktail.")
-    ingredient_amounts: List[float]  = Field(description="A list of the amounts of the ingredients in the cocktail as floats.")
+    ingredient_amounts: List[Union[float, int]]  = Field(description="A list of the amounts of the ingredients in the cocktail as floats.")
     ingredient_units: List[str] = Field(description="A list of the units of the ingredients in the cocktail.  Could be oz, splash,\
                                                     dash, etc.")
     ingredients_list: List[str] = Field(description="A list of the ingredients in the cocktail")
@@ -65,6 +65,11 @@ class CocktailRecipe(BaseModel):
     @property
     def ingredients(self):
         return list(zip(self.ingredient_names, self.ingredient_amounts, self.ingredient_units))
+    
+    # Define a function to return the recipe text
+    @property
+    def recipe_text(self):
+        return f"Recipe for {self.name}:\n\nIngredients:\n{self.ingredients}\n\nInstructions:\n{self.instructions}\n\nGarnish: {self.garnish}\n\nGlass: {self.glass}\n\nFlavor Profile: {self.flavor_profile}"
     
 
 # Define a function to return a session id if the user does not have one,
@@ -171,9 +176,9 @@ class RecipeService:
     # Define a function to check the recipe for completeness
     def check_recipe_completeness(self, recipe):
         # Check to make sure the recipe has a name
-        if recipe.name == None:
+        if recipe.name is None:
             return False
-        if recipe.ingredients_list == None:
+        if recipe.ingredients_list is None:
             return False
         elif recipe.ingredient_amounts == []:
             return False
@@ -243,7 +248,7 @@ class RecipeService:
 
         # Define the user message.  This is the message that will be passed to the model to generate the recipe.
         human_template = "Create a delcious cocktail recipe to help me use up my excess inventory."
-        human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)    
+        human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)   
         
         # Create the chat prompt template
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
@@ -411,3 +416,42 @@ class RecipeService:
         total_value = df[df['Name'].str.lower() == st.session_state.chosen_spirit.lower()]['Total Value'].values[0]
         # Note the difference in the value of the chosen_spirit in inventory and the total profit
         st.success(f"Congratulations!  You turned \${total_value:.2f} worth of {st.session_state.chosen_spirit} into ${total_profit:.2f} worth of profit!")
+
+        # Create a function to generate a training guide
+        #Establish the function to submit the text of the recipe to the model and generate the training guide
+
+    def generate_training_guide(self):
+        # Set the recipe text to the recipe text from the recipe service
+        recipe_text = self.recipe.recipe_text
+        # Create the messages for the model
+        messages = [
+            {"role" : "system", "content" : f"Generate a detailed training guide for a cocktail recipe for a restaurant pre-shift staff education,\
+            focusing on the history and specifics of the ingredients, the techniques used, and the flavor profile of the drink. The recipe is as\
+            follows: {recipe_text}."
+            },
+        ]
+        # Define the parameters for the API call
+        params = {
+            "model": "gpt-3.5-turbo",
+            "messages": messages,
+            "max_tokens": 750,
+            "frequency_penalty": 0.5,
+            "presence_penalty": 0.5,
+            "temperature": 1,
+            "top_p": 0.9,
+            "n": 1,
+        }
+        
+        # Call the OpenAI API and handle exceptions
+        try:
+            response = openai.ChatCompletion.create(**params)
+        except (requests.exceptions.RequestException, openai.error.APIError):
+            params["model"] = "gpt-3.5-turbo-0301"
+            response = openai.ChatCompletion.create(**params)
+
+        # Return the the response as training guide
+        guide = response.choices[0].message.content
+
+        return guide
+
+
