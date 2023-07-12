@@ -134,3 +134,7 @@ dmypy.json
 
 # Google Credentials JSON
 ./google_oath2.json
+
+tests/
+
+future_pages/
