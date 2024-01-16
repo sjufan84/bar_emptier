@@ -7,8 +7,9 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit import components
 # from PIL import Image
 from utils.image_utils import generate_image
-from utils.cocktail_utils import create_cocktail
+from utils.cocktail_utils import create_cocktail, convert_recipe_to_text
 from utils.training_utils import create_training_guide
+from utils.save_print_utils import get_recipe_pdf_download_link
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +20,7 @@ st.set_page_config(
 )
 
 st.markdown("#### Documentation notes:")
-st.success('''
+st.markdown('''
               ''')
 st.markdown('---')
 
@@ -82,8 +83,8 @@ async def get_cocktail_info():
     # Start by getting the input for the liquor that the user is trying to use up
     chosen_liquor = st.selectbox('What spirit are you trying to use up?\
     (Type to search by name)', spirits_list)
-    st.warning('**Note:  If you do not see the spirit you are looking for above,\
-    select "Other" and manually enter it below.**')
+    st.markdown(':violet[**Note:  If you do not see the spirit you are looking for above,\
+    select "Other" and manually enter it below.**]')
     # If the spirit they need to use up is not in the list, allow them to enter it manually
     if chosen_liquor == 'Other':
         chosen_liquor = st.text_input('What is the name of the spirit you are trying to use up?')
@@ -119,7 +120,7 @@ async def get_cocktail_info():
 
 async def display_recipe():
     # Create the header
-    st.markdown('''<div style="text-align: center;">
+    st.markdown('''<div style="text-align: center; color:#778da9">
     <h4>Here's your recipe!</h4>
     <hr>
     </div>''', unsafe_allow_html=True)
@@ -129,28 +130,28 @@ async def display_recipe():
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
         # Display the recipe name
-        st.markdown(f':blue[**Recipe Name:**]  {recipe["name"]}')
+        st.markdown(f':violet[**Recipe Name:**]  {recipe["name"]}')
         # Convert the ingredients tuples into a list of strings
 
-        # Display the recipe ingredients
-        st.markdown(':blue[**Ingredients:**]')
+        # Display the recipe ingvioletients
+        st.markdown(':violet[**Ingredients:**]')
         ingredients_list = recipe['ingredients']
         # Convert the ingredients tuple into a list
         for ingredient in ingredients_list:
             st.markdown(f'{ingredient}')
         # Display the recipe instructions
-        st.markdown(':blue[**Directions:**]')
+        st.markdown(':violet[**Directions:**]')
         for direction in recipe['directions']:
             st.markdown(f'{direction}')
         # Display the recipe garnish
-        st.markdown(f':blue[**Garnish:**] {recipe["garnish"]}')
+        st.markdown(f':violet[**Garnish:**] {recipe["garnish"]}')
         # Display the recipe glass
-        st.markdown(f':blue[**Glass:**] {recipe["glass"]}')
+        st.markdown(f':violet[**Glass:**] {recipe["glass"]}')
         # Display the recipe description
-        st.markdown(f':blue[**Description:**] {recipe["description"]}')
+        st.markdown(f':violet[**Description:**] {recipe["description"]}')
         # Display the recipe fun fact
         if recipe["fun_fact"]:
-            st.markdown(f':blue[**Fun Fact:**] {recipe["fun_fact"]}')
+            st.markdown(f':violet[**Fun Fact:**] {recipe["fun_fact"]}')
     with col2:
         # Display the recipe name
         st.markdown(f'<div style="text-align: center;">{recipe["name"]}</div>', unsafe_allow_html=True)
@@ -167,7 +168,12 @@ async def display_recipe():
         st.markdown('''<div style="text-align: center;">
         <p>AI cocktail image generated using the Dall-E-2 by OpenAI.</p>
         </div>''', unsafe_allow_html=True)
-        st.warning('**Note:** The actual cocktail may not look exactly like this!')
+        st.markdown(':violet[**Note:** The actual cocktail may not look exactly like this!]')
+
+        pdf_download_link = await get_recipe_pdf_download_link(
+            recipe = recipe, recipe_name = recipe["name"]
+        )
+        st.markdown(pdf_download_link, unsafe_allow_html=True)
 
         # Create an option to chat about the recipe
         chat_button = st.button(

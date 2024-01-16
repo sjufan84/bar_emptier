@@ -15,11 +15,11 @@ st.set_page_config(
 )
 
 st.markdown("#### Documentation notes:")
-st.success('''
-           **The landing page.  Allows the user to choose to have
+st.markdown('''
+           :violet[**The landing page.  Allows the user to choose to have
             a general chat with a bartender, or create a recipe.
             Once the recipe is created, they will have the option
-            to initiate a chat about the recipe along with several other features.**
+            to initiate a chat about the recipe along with several other features.**]
               ''')
 st.markdown('---')
 

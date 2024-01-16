@@ -60,3 +60,20 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
             continue
 
     return None  # Return None or a default response if all models fail
+
+async def convert_recipe_to_text(recipe: dict) -> str:
+    """ Convert a recipe to text """
+    recipe_text = f'''{recipe["name"]}
+
+    Ingredients:
+    {recipe["ingredients"]}
+
+    Directions:
+    {recipe["directions"]}
+
+    Garnish: {recipe["garnish"]}
+    Glass: {recipe["glass"]}
+    Description: {recipe["description"]}
+    Fun Fact: {recipe["fun_fact"]}
+    '''
+    return recipe_text
