@@ -1,49 +1,52 @@
-## This page is for functions related to generating training materials for the generated cocktails
-# Once they have confirmed that they are happy with the cocktail, they will be able to generate training materials for the cocktail
-# By sending the text of the recipe to GPT-3.5.
+""" Cocktail helper functions """
+import logging
+from openai import OpenAIError
+from dependencies import get_openai_client
 
-# Initial imports
-import os
-from dotenv import load_dotenv
-load_dotenv()
-import openai
-import requests
+# Load the OpenAI client
+client = get_openai_client()
 
-# Load the openai api key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-openai.organization = os.getenv("OPENAI_ORG")
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 
-#Establish the function to submit the text of the recipe to the model and generate the training guide
-def generate_training_guide(recipe_text):
-    
-    # Create the messages for the model
+core_models = [
+    "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+]
+
+async def create_training_guide(cocktail : dict):
+    """ Create a training guide for a cocktail."""
     messages = [
-        {"role" : "system", "content" : f"Generate a detailed training guide for a cocktail recipe for a restaurant pre-shift staff education,\
-          focusing on the history and specifics of the ingredients, the techniques used, and the flavor profile of the drink. The recipe is as\
-          follows: {recipe_text}."
-        },
+        {
+            "role": "system",
+            "content": f"""You are a master mixologist who has
+            helped a user generate a cocktail recipe {cocktail}.
+            Tbey would like for you to help them generate a training guide for their staff.  This should be
+            a "one page" guide that can be used to train staff during a pre-shift meeting or other training
+            session.  The guide should include information
+            such as the flavor profile of the cocktail, information
+            about the ingredients, notes about the technique,
+            and how they can upsell and explain the cocktail to
+            their guests."""
+        }
     ]
-    # Define the parameters for the API call
-    params = {
-        "model": "gpt-3.5-turbo",
-        "messages": messages,
-        "max_tokens": 750,
-        "frequency_penalty": 0.5,
-        "presence_penalty": 0.5,
-        "temperature": 1,
-        "top_p": 0.9,
-        "n": 1,
-    }
-    
-    # Call the OpenAI API and handle exceptions
-    try:
-        response = openai.ChatCompletion.create(**params)
-    except (requests.exceptions.RequestException, openai.error.APIError):
-        params["model"] = "gpt-3.5-turbo-0301"
-        response = openai.ChatCompletion.create(**params)
 
-    # Return the the response as training guide
-    guide = response.choices[0].message.content
+    for model in core_models:
+        try:
+            logging.debug("Trying model: %s.", model)
+            # Assuming client has an async method for chat completions
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=0.75,
+                top_p=1,
+                max_tokens=750,
+            )
+            training_response = response.choices[0].message.content
+            logging.debug("Response: %s", training_response)
+            return training_response
 
-    return guide
+        except OpenAIError as e:
+            logging.error("Error with model: %s. Error: %s", model, e)
+            continue
 
+    return None  # Return None or a default response if all models fail
