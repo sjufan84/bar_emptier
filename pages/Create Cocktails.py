@@ -9,7 +9,7 @@ from streamlit import components
 from utils.image_utils import generate_image
 from utils.cocktail_utils import create_cocktail
 from utils.training_utils import create_training_guide
-from utils.save_print_utils import get_recipe_pdf_download_link
+# from utils.save_print_utils import get_recipe_pdf_download_link
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -170,10 +170,10 @@ async def display_recipe():
         </div>''', unsafe_allow_html=True)
         st.markdown(':violet[**Note:** The actual cocktail may not look exactly like this!]')
 
-        pdf_download_link = await get_recipe_pdf_download_link(
-            recipe = recipe, recipe_name = recipe["name"]
-        )
-        st.markdown(pdf_download_link, unsafe_allow_html=True)
+        # pdf_download_link = await get_recipe_pdf_download_link(
+        #    recipe = recipe, recipe_name = recipe["name"]
+        # )
+        # st.markdown(pdf_download_link, unsafe_allow_html=True)
 
         # Create an option to chat about the recipe
         chat_button = st.button(

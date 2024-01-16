@@ -12,6 +12,8 @@ if "cocktail_chat_messages" not in st.session_state:
     st.session_state.cocktail_chat_messages = None
 if "show_recipe" not in st.session_state:
     st.session_state.show_recipe = False
+if "current_cocktail" not in st.session_state:
+    st.session_state.current_cocktail = None
 
 client = get_openai_client()
 
@@ -35,6 +37,10 @@ if not st.session_state.cocktail_chat_messages:
 
 def cocktail_chat():
     """ Chat bot to answer questions about the business plan """
+    if not st.session_state.current_cocktail:
+        st.markdown("**You have not created a cocktail yet.  Please select the\
+            'Create a Cocktail' button on the home page or sidebar.**")
+        st.stop()
     recipe = st.session_state.current_cocktail
 
     # Display chat messages from history on app rerun
