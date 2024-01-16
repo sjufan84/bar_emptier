@@ -7,7 +7,7 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit import components
 # from PIL import Image
 from utils.image_utils import generate_image
-from utils.cocktail_utils import create_cocktail, convert_recipe_to_text
+from utils.cocktail_utils import create_cocktail
 from utils.training_utils import create_training_guide
 from utils.save_print_utils import get_recipe_pdf_download_link
 
