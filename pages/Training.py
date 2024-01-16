@@ -16,10 +16,19 @@ st.success('''
         ''')
 st.markdown('---')
 
+if "cocktail_page" not in st.session_state:
+    st.session_state.cocktail_page = "display_recipe"
+if "training_guide" not in st.session_state:
+    st.session_state.training_guide = None
+
 
 # Define the function to display the training guide for the cocktail
 def display_training_guide():
     """ Display the generated training guide for the current cocktail """
+    if not st.session_state.training_guide:
+        st.markdown("**You have not created a cocktail yet.  Please select the\
+            'Create a Cocktail' button on the home page or sidebar.**")
+        st.stop()
     # Display the training guide
     st.markdown(st.session_state.training_guide)
 
