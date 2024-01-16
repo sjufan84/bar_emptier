@@ -1,12 +1,6 @@
-pandas
-streamlit == 1.23.0
-openai
-python-dotenv
-streamlit_extras
-streamlit-chat
-langchain
-mysql-connector-python
-pdfplumber
-google-cloud-vision
-pyspellchecker
-redis
+streamlit==1.30.0
+streamlit-extras==0.3.6
+openai==1.7.2
+pydantic==2.5.3
+python-dotenv==1.0.0
+```
