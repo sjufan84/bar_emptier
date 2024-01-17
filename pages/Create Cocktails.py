@@ -4,8 +4,6 @@ import logging
 import asyncio
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
-from streamlit import components
-# from PIL import Image
 from utils.image_utils import generate_image
 from utils.cocktail_utils import create_cocktail
 from utils.training_utils import create_training_guide
@@ -19,25 +17,47 @@ st.set_page_config(
     page_title="BarGuruV1", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="auto"
 )
 
-st.markdown("#### Documentation notes:")
-st.markdown('''
-              ''')
-st.markdown('---')
+general_chat_button = st.sidebar.button(
+    "General Chat", type = "secondary", use_container_width=True
+)
+if general_chat_button:
+    switch_page('General Chat')
+    st.rerun()
+
+home_button = st.sidebar.button(
+    "Home", type = "secondary", use_container_width=True
+)
+if home_button:
+    switch_page('Home')
+    st.rerun()
+
+st.sidebar.link_button(
+    label = ":green[**Please help us out by filling out a quick survey about your experience!**]",
+    url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+    type = "secondary",
+    use_container_width=False)
 
 # Initialize the session state
 def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
         "current_cocktail", "current_image", "cocktail_page", "training_guide",
-        "cocktail_chat_messages"
+        "cocktail_chat_messages", "current_model", "model_selection"
     ]
     default_values = [
-        None, None, "get_cocktail_info", None, None
+        None, None, "get_cocktail_info", None, None, "gpt-3.5-turbo-1106", "GPT-3.5"
     ]
 
     for var, default_value in zip(session_vars, default_values):
         if var not in st.session_state:
             st.session_state[var] = default_value
+
+# Define the callback function to update the session state
+def set_model():
+    if st.session_state["radio_value"] == ':violet[GPT-3.5]':
+        st.session_state["current_model"] = "gpt-3.5-turbo-1106"
+    elif st.session_state["radio_value"] == ':violet[GPT-4]':
+        st.session_state["current_model"] = "gpt-4-1106-preview"
 
 # Initialize the session state variables
 init_cocktail_session_variables()
@@ -74,6 +94,14 @@ spirits_list = [
 
 async def get_cocktail_info():
     """ This is the main entry point for the user to create cocktails """
+    st.markdown("#### Hello Beta Testers!")
+    st.markdown(
+        ''':violet[**This page should be pretty straightforward.  You will notice the option to select
+        between 'GPT-3.5' and 'GPT-4'.  GPT-4 will theoretically generate more nuanced and robust
+        cocktails, but will take a bit longer to generate.  Feel free to play around with each, and let us
+        know what you think!**]'''
+    )
+
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h2>Tell us about the cocktail you want to create!</h2>
@@ -106,19 +134,51 @@ async def get_cocktail_info():
     theme = st.text_input(
         'What theme, if any, are you looking for? (e.g. "tiki", "holiday", "summer", etc.)', 'None'
     )
-
+    col1, col2 = st.columns(2, gap="small")
     # Create the submit button
-    cocktail_submit_button = st.button(label='Create your cocktail!')
-    if cocktail_submit_button:
-        with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
-            st.session_state.current_cocktail = await create_cocktail(
-                liqour=chosen_liquor, type=cocktail_type, cuisine=cuisine, theme=theme
-            )
-            if st.session_state.current_cocktail:
-                st.session_state.cocktail_page = "display_recipe"
-                st.rerun()
+    with col1:
+        cocktail_submit_button = st.button(label='Create your cocktail!')
+        if cocktail_submit_button:
+            with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
+                st.session_state.current_cocktail = await create_cocktail(
+                    liqour=chosen_liquor, type=cocktail_type, cuisine=cuisine, theme=theme
+                )
+                if st.session_state.current_cocktail:
+                    st.session_state.cocktail_page = "display_recipe"
+                    st.rerun()
+    with col2:
+        st.radio(
+            ":rainbow[AI Model Selection]", [':violet[GPT-3.5]', ':violet[GPT-4]'], index=0, horizontal=True,
+            key="radio_value", on_change=set_model
+        )
+    st.text("")
+    general_chat_button = st.button(
+        "General Chat", type = "secondary", use_container_width=True, key="gchat2"
+    )
+    if general_chat_button:
+        switch_page('General Chat')
+        st.rerun()
+    # Create a button to go back to the home page
+    home_button = st.button('Back to Home', type = 'secondary', use_container_width=True)
+    if home_button:
+        switch_page('Home')
+        st.rerun()
 
+    st.link_button(
+        label = ":rainbow[**Please help us out by filling out a quick survey about your experience!**]",
+        url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+        type = "secondary",
+        use_container_width=True)
+
+    st.link_button(
+        label = ":green[**Contact Us**]",
+        url = "mailto:dave_thomas@enoughwebapp.com",
+        type = "secondary",
+        use_container_width=True)
 async def display_recipe():
+    if not st.session_state.current_cocktail:
+        st.session_state.cocktail_page = "get_cocktail_info"
+        st.rerun()
     # Create the header
     st.markdown('''<div style="text-align: center; color:#778da9">
     <h4>Here's your recipe!</h4>
@@ -178,7 +238,7 @@ async def display_recipe():
         # Create an option to chat about the recipe
         chat_button = st.button(
             'Questions about the recipe?  Click here to chat with a bartender about it.',
-            type = 'primary', use_container_width=True
+            type = 'secondary', use_container_width=True
         )
         if chat_button:
            switch_page('Cocktail Chat')
@@ -187,7 +247,7 @@ async def display_recipe():
         #  Create an option to generate a training guide
         training_guide_button = st.button(
             'Click here to generate a training guide for this recipe.',
-            type = 'primary', use_container_width=True)
+            type = 'secondary', use_container_width=True)
         if training_guide_button:
             with st.spinner('Generating training guide...'):
                 st.session_state.training_guide = await create_training_guide(recipe)
@@ -196,7 +256,7 @@ async def display_recipe():
                     st.rerun()
 
         # Create an option to get a new recipe
-        new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
+        new_recipe_button = st.button('Get a new recipe', type = 'secondary', use_container_width=True)
         if new_recipe_button:
             # Clear the session state variables
             st.session_state.current_cocktail = None
@@ -207,15 +267,17 @@ async def display_recipe():
             st.session_state.cocktail_page = "get_cocktail_info"
             st.rerun()
 
-    # Display the feedback form
-    st.markdown('---')
-    st.markdown('''<div style="text-align: center;">
-    <h4 class="feedback">We want to hear from you!  Please help us grow by taking
-    a quick second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
-    </div>''', unsafe_allow_html=True)
+        st.link_button(
+            label = ":rainbow[**Please help us out by filling out a quick survey about your experience!**]",
+            url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+            type = "secondary",
+            use_container_width=False)
 
-    src = "https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
-    components.v1.iframe(src, height=600, scrolling=True)
+        st.link_button(
+            label = ":green[**Contact Us**]",
+            url = "mailto:dave_thomas@enoughwebapp.com",
+            type = "secondary",
+            use_container_width=True)
 
 if st.session_state.cocktail_page == "get_cocktail_info":
     asyncio.run(get_cocktail_info())

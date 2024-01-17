@@ -2,6 +2,7 @@
 import logging
 import json
 from openai import OpenAIError
+import streamlit as st
 from models.recipes import Cocktail
 from dependencies import get_openai_client
 
@@ -11,9 +12,8 @@ client = get_openai_client()
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-core_models = [
-    "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
-]
+if "current_model" not in st.session_state:
+    st.session_state.current_model = "gpt-3.5-turbo-1106"
 
 async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
     """ Create a cocktail recipe """
@@ -39,25 +39,23 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
         }
     ]
 
-    for model in core_models:
-        try:
-            logging.debug("Trying model: %s.", model)
-            # Assuming client has an async method for chat completions
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.75,
-                top_p=1,
-                max_tokens=750,
-                response_format={"type": "json_object"}
-            )
-            cocktail_response = response.choices[0].message.content
-            logging.debug("Response: %s", cocktail_response)
-            return json.loads(cocktail_response)
+    try:
+        logging.debug("Trying model: %s.", st.session_state.current_model)
+        # Assuming client has an async method for chat completions
+        response = client.chat.completions.create(
+            model=st.session_state.current_model,
+            messages=messages,
+            temperature=0.75,
+            top_p=1,
+            max_tokens=750,
+            response_format={"type": "json_object"}
+        )
+        cocktail_response = response.choices[0].message.content
+        logging.debug("Response: %s", cocktail_response)
+        return json.loads(cocktail_response)
 
-        except OpenAIError as e:
-            logging.error("Error with model: %s. Error: %s", model, e)
-            continue
+    except OpenAIError as e:
+        logging.error("Error with model: %s. Error: %s", st.session_state.current_model, e)
 
     return None  # Return None or a default response if all models fail
 

@@ -5,7 +5,6 @@ create cocktail recipes to help them get rid of excess inventory.
 """
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
-from streamlit import components
 from PIL import Image
 
 # Define the page config
@@ -14,12 +13,14 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-st.markdown("#### Documentation notes:")
+st.markdown("#### Hello Beta Testers!")
 st.markdown('''
-           :violet[**The landing page.  Allows the user to choose to have
-            a general chat with a bartender, or create a recipe.
-            Once the recipe is created, they will have the option
-            to initiate a chat about the recipe along with several other features.**]
+           :violet[**Thank you so much for helping us test drive the app.
+           Starting out is simple.  Simply select whether or not you want to ask
+           general bar questions or create a cocktail.  The goal is to help you come up
+           with creative ways to use up that pesky dead stock.  We hope you enjoy the process as
+           much as we do, and please help us out by filling out a quick survey linked
+           via buttons on all of the pages.  Cheers!**]
               ''')
 st.markdown('---')
 
@@ -75,10 +76,8 @@ with col2:
 
 # Display feedback form
 st.markdown('---')
-st.markdown('''<div style="text-align: center;">
-<h4 class="feedback">We want to hear from you!  Please help us grow by taking a quick
-second to fill out the form below and to stay in touch about future developments.  Thank you!</h4>
-</div>''', unsafe_allow_html=True)
-
-src = "https://docs.google.com/forms/d/e/1FAIpQLSc0IHrNZvMfzqUeSfrJxqINBVWxE5ZaF4a30UiLbNFdVn1-RA/viewform?embedded=true"
-components.v1.iframe(src, height=600, scrolling=True)
+st.link_button(
+    label = "Please help us out by filling out a quick survey about your experience!",
+    url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+    type = "primary",
+    use_container_width=True)

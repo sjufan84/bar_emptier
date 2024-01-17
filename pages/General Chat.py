@@ -2,6 +2,7 @@
 from PIL import Image
 from dependencies import get_openai_client
 import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(
     page_title="General Chat", page_icon="./resources/bartenders.png", initial_sidebar_state="auto"
@@ -31,22 +32,28 @@ init_general_chat_session_variables()
 
 initial_message = {
     "role": "system",
-    "content": f"""
-    You are a master mixologist and bar manager, helping a user create cocktails,
+    "content": f"""You are a master mixologist and bar manager, helping a user create cocktails,
     craft menus, manage their inventory, and answer general bar questions.  Your tone
     should be warm and welcoming while having high standards and a passion for the
     details. Your recent chat history is {st.session_state.general_chat_messages}.
     Remeber you are a master mixologist and business person, not an AI, so make sure to
     stay in and do not break character.Keep your answer concise and to the point, but ask
-    clarifying questions if needed.
-    """
+    clarifying questions if needed."""
 }
 
 if not st.session_state.general_chat_messages:
     st.session_state.general_chat_messages = [initial_message]
 
 def general_chat():
-    """ Chat bot to answer questions about the business plan """
+    """ Chat bot to answer general bar questions """
+    if len(st.session_state.general_chat_messages) == 1:
+        st.markdown(
+            """:violet[**The goal with this page is to help answer general bar questions.\
+            Of course you can always copy and paste a cocktail you have created to get answers\
+            to questions about that specific cocktail.  If you would like to create a cocktail,
+            select 'Create Cocktail' from the side bar.  Cheers!**]"""
+        )
+
     # Display chat messages from history on app rerun
     for message in st.session_state.general_chat_messages:
         if message["role"] == "assistant":
@@ -85,6 +92,34 @@ def general_chat():
           message_placeholder.markdown(full_response + "▌")
         message_placeholder.markdown(full_response)
         st.session_state.general_chat_messages.append({"role": "assistant", "content": full_response})
+
+    create_cocktail_button = st.sidebar.button(
+        "Create Cocktail", use_container_width=True, type='secondary'
+    )
+
+    if create_cocktail_button:
+        switch_page("Create Cocktails")
+        st.rerun()
+
+    clear_chat_button = st.sidebar.button(
+        "Clear Chat", use_container_width=True, type='secondary'
+    )
+    if clear_chat_button:
+        st.session_state.general_chat_messages = [initial_message]
+        st.rerun()
+
+    home_button = st.sidebar.button(
+        "Home", use_container_width=True, type='secondary'
+    )
+    if home_button:
+        switch_page("Home")
+        st.rerun()
+
+    st.sidebar.link_button(
+        label = ":green[**Please help us out by filling out a quick survey about your experience!**]",
+        url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+        type = "secondary",
+        use_container_width=False)
 
 if __name__ == "__main__":
     general_chat()

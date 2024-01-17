@@ -28,7 +28,9 @@ initial_message = {
     helping them creatively use up their excess inventory.
     They would like to ask you some follow up questions about the recipe.
     Your tone should be warm and welcoming while having high standards and a passion for the
-    details. Your recent chat history is {st.session_state.cocktail_chat_messages}.
+    details. Your recent chat history is {st.session_state.cocktail_chat_messages}.  Keep
+    the conversation open-ended, asking follow up questions such as 'Is there anything
+    else I can help you with?' or whatever seems appropriate.
     """
 }
 
@@ -36,12 +38,25 @@ if not st.session_state.cocktail_chat_messages:
     st.session_state.cocktail_chat_messages = [initial_message]
 
 def cocktail_chat():
-    """ Chat bot to answer questions about the business plan """
+    """ Chat bot to answer questions about a specific cocktail """
     if not st.session_state.current_cocktail:
         st.markdown("**You have not created a cocktail yet.  Please select the\
             'Create a Cocktail' button on the home page or sidebar.**")
+        new_cocktail_button = st.button(
+            "Create a Cocktail", use_container_width=True, type='primary'
+        )
+        if new_cocktail_button:
+            switch_page('Create Cocktails')
         st.stop()
     recipe = st.session_state.current_cocktail
+
+    if len(st.session_state.cocktail_chat_messages) == 1:
+        st.markdown(
+            """:violet[**The goal with this page is to help answer questions about a
+            generated cocktail.  This could be questions about ingredients, changes you want to make,
+            etc.  If you need to reference the cocktail, click 'Show Recipe' on the sidebar.
+            Of course the model can answer general bar questions as well.**]"""
+        )
 
     # Display chat messages from history on app rerun
     for message in st.session_state.cocktail_chat_messages:
@@ -83,9 +98,8 @@ def cocktail_chat():
         st.session_state.cocktail_chat_messages.append({"role": "assistant", "content": full_response})
 
     show_recipe_button = st.sidebar.button(
-        "Show Recipe", use_container_width=True, type='primary'
+        "Show Recipe", use_container_width=True, type='secondary'
     )
-
     if show_recipe_button:
         # Switch the state of the show_recipe variable
         st.session_state.show_recipe = not st.session_state.show_recipe
@@ -115,12 +129,30 @@ def cocktail_chat():
             st.sidebar.markdown(f':blue[**Fun Fact:**] {recipe["fun_fact"]}')
 
     back_to_cocktail_button = st.sidebar.button(
-        "Back to Main Cocktail Page", use_container_width=True, type='primary'
+        "Back to Main Cocktail Page", use_container_width=True, type='secondary'
     )
     if back_to_cocktail_button:
         st.session_state.cocktail_page = "display_recipe"
         switch_page('Create Cocktails')
         st.rerun()
+
+    general_chat_button = st.button('General Chat', use_container_width=True, type='secondary')
+    if general_chat_button:
+        switch_page('General Chat')
+        st.rerun()
+
+    home_button = st.sidebar.button(
+        "Home", type = "secondary", use_container_width=True
+    )
+    if home_button:
+        switch_page('Home')
+        st.rerun()
+
+    st.sidebar.link_button(
+        label = ":green[**Please help us out by filling out a quick survey about your experience!**]",
+        url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+        type = "secondary",
+        use_container_width=False)
 
 if __name__ == "__main__":
     cocktail_chat()
