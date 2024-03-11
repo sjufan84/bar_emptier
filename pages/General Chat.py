@@ -3,6 +3,12 @@ from PIL import Image
 from dependencies import get_openai_client
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("openai").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="General Chat", page_icon="./resources/bartenders.png", initial_sidebar_state="auto"
@@ -40,6 +46,7 @@ initial_message = {
     stay in and do not break character.Keep your answer concise and to the point, but ask
     clarifying questions if needed."""
 }
+logger.debug("Initial message: %s", initial_message)
 
 if not st.session_state.general_chat_messages:
     st.session_state.general_chat_messages = [initial_message]
@@ -68,6 +75,7 @@ def general_chat():
         with st.spinner("Grabbing the shaker..."):
             # Add user message to chat history
             st.session_state.general_chat_messages.append({"role": "user", "content": prompt})
+            logger.debug("Chat history: %s", st.session_state.general_chat_messages)
 
             # Display user message in chat message container
             with st.chat_message("user"):

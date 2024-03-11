@@ -11,6 +11,8 @@ client = get_openai_client()
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("openai").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 if "current_model" not in st.session_state:
     st.session_state.current_model = "gpt-3.5-turbo-1106"
@@ -40,7 +42,7 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
     ]
 
     try:
-        logging.debug("Trying model: %s.", st.session_state.current_model)
+        logger.debug("Creating cocktail recipe")
         # Assuming client has an async method for chat completions
         response = client.chat.completions.create(
             model=st.session_state.current_model,
@@ -51,11 +53,12 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
             response_format={"type": "json_object"}
         )
         cocktail_response = response.choices[0].message.content
-        logging.debug("Response: %s", cocktail_response)
+        logger.debug("Response: %s", cocktail_response)
         return json.loads(cocktail_response)
 
     except OpenAIError as e:
-        logging.error("Error with model: %s. Error: %s", st.session_state.current_model, e)
+        logger.error("OpenAI Error: %s", e)
+        return None
 
     return None  # Return None or a default response if all models fail
 

@@ -11,6 +11,7 @@ from utils.training_utils import create_training_guide
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Define the page config
 st.set_page_config(
@@ -55,9 +56,13 @@ def init_cocktail_session_variables():
 # Define the callback function to update the session state
 def set_model():
     if st.session_state["radio_value"] == ':violet[GPT-3.5]':
+        logger.info("Setting the model to GPT-3.5")
         st.session_state["current_model"] = "gpt-3.5-turbo-1106"
+        logger.info(f"Current model: {st.session_state['current_model']}")
     elif st.session_state["radio_value"] == ':violet[GPT-4]':
+        logger.info("Setting the model to GPT-4")
         st.session_state["current_model"] = "gpt-4-1106-preview"
+        logger.info(f"Current model: {st.session_state['current_model']}")
 
 # Initialize the session state variables
 init_cocktail_session_variables()
@@ -117,6 +122,7 @@ async def get_cocktail_info():
     if chosen_liquor == 'Other':
         chosen_liquor = st.text_input('What is the name of the spirit you are trying to use up?')
     chosen_liquor = str(chosen_liquor)
+    logger.info(f"Chosen liquor: {chosen_liquor}")
     # Allow the user to choose what type of cocktail from "Classic", "Craft", "Standard"
     cocktail_type = st.selectbox(
         'What type of cocktail are you looking for?', ['Classic', 'Craft', 'Standard']
