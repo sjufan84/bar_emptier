@@ -14,14 +14,16 @@ st.set_page_config(
 )
 
 st.markdown("#### Hello Beta Testers!")
-st.markdown('''
-           :violet[**Thank you so much for helping us test drive the app.
+st.markdown('''<div style="color: #262730; font-weight: bold; font-size: 20px; text-align: left;">
+            <p>Thank you so much for helping us test drive the app.
            Starting out is simple.  Simply select whether or not you want to ask
            general bar questions or create a cocktail.  The goal is to help you come up
-           with creative ways to use up that pesky dead stock.  We hope you enjoy the process as
-           much as we do, and please help us out by filling out a quick survey linked
-           via buttons on all of the pages.  Cheers!**]
-              ''')
+           with creative ways to use up that pesky dead stock.  You will be allowed to generate
+           two cocktails on us, and then if you want to generate more, help us out by filling
+           out a <a href=""https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u">
+           quick survey</a> about your experience.  Even if you don't want
+           to make more than two, please fill it out anyway to help us grow and improve the app.
+           Cheers!</p></div>''', unsafe_allow_html=True)
 st.markdown('---')
 
 
@@ -76,8 +78,3 @@ with col2:
 
 # Display feedback form
 st.markdown('---')
-st.link_button(
-    label = "Please help us out by filling out a quick survey about your experience!",
-    url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
-    type = "primary",
-    use_container_width=True)

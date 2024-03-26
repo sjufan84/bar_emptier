@@ -10,7 +10,7 @@ st.set_page_config(
 
 st.markdown("#### Beta Testers:")
 st.markdown('''
-        :violet[**Here we display the generated training guide for the cocktail.
+        :blue[**Here we display the generated training guide for the cocktail.
         The idea is to generate a "one-pager" that
         can easily be used for pre-shift and distribution to the staff.**]
         ''')
@@ -73,13 +73,13 @@ def display_training_guide():
         st.rerun()
 
     st.link_button(
-        label = ":rainbow[**Please help us out by filling out a quick survey about your experience!**]",
+        label = "**Please help us out by filling out a quick survey about your experience!**",
         url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
         type = "secondary",
         use_container_width=True)
 
     st.link_button(
-        label = ":green[**Contact Us**]",
+        label = "**Contact Us**",
         url = "mailto:dave_thomas@enoughwebapp.com",
         type = "secondary",
         use_container_width=True)

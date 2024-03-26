@@ -55,10 +55,10 @@ def general_chat():
     """ Chat bot to answer general bar questions """
     if len(st.session_state.general_chat_messages) == 1:
         st.markdown(
-            """:violet[**The goal with this page is to help answer general bar questions.\
+            """:red[The goal with this page is to help answer general bar questions.\
             Of course you can always copy and paste a cocktail you have created to get answers\
             to questions about that specific cocktail.  If you would like to create a cocktail,
-            select 'Create Cocktail' from the side bar.  Cheers!**]"""
+            select 'Create Cocktail' from the side bar.  Cheers!]"""
         )
 
     # Display chat messages from history on app rerun
@@ -102,7 +102,7 @@ def general_chat():
         st.session_state.general_chat_messages.append({"role": "assistant", "content": full_response})
 
     create_cocktail_button = st.sidebar.button(
-        "Create Cocktail", use_container_width=True, type='secondary'
+        "Create Cocktail", use_container_width=True, type='primary'
     )
 
     if create_cocktail_button:
@@ -110,23 +110,23 @@ def general_chat():
         st.rerun()
 
     clear_chat_button = st.sidebar.button(
-        "Clear Chat", use_container_width=True, type='secondary'
+        "Clear Chat", use_container_width=True, type='primary'
     )
     if clear_chat_button:
         st.session_state.general_chat_messages = [initial_message]
         st.rerun()
 
     home_button = st.sidebar.button(
-        "Home", use_container_width=True, type='secondary'
+        "Home", use_container_width=True, type='primary'
     )
     if home_button:
         switch_page("Home")
         st.rerun()
 
     st.sidebar.link_button(
-        label = ":green[**Please help us out by filling out a quick survey about your experience!**]",
+        label = "**Please help us out by filling out a quick survey about your experience!**",
         url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
-        type = "secondary",
+        type = "primary",
         use_container_width=False)
 
 if __name__ == "__main__":
