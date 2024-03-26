@@ -1,5 +1,6 @@
-from openai import OpenAI
+""" Module to handle dependencies. """
 import os
+from openai import OpenAI
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -8,7 +9,6 @@ load_dotenv()
 def get_openai_api_key():
     """ Function to get the OpenAI API key. """
     return os.getenv("OPENAI_API_KEY")
-
 
 def get_openai_org():
     """ Function to get the OpenAI organization. """
