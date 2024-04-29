@@ -83,7 +83,7 @@ def cocktail_chat():
                 full_response = ""
 
             response = client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                model="gpt-4-turbo",
                 messages=st.session_state.cocktail_chat_messages,
                 stream=True,
                 temperature=0.6,
@@ -136,7 +136,7 @@ def cocktail_chat():
         switch_page('Create Cocktails')
         st.rerun()
 
-    general_chat_button = st.button('General Chat', use_container_width=True, type='secondary')
+    general_chat_button = st.sidebar.button('General Chat', use_container_width=True, type='secondary')
     if general_chat_button:
         switch_page('General Chat')
         st.rerun()
@@ -149,9 +149,9 @@ def cocktail_chat():
         st.rerun()
 
     st.sidebar.link_button(
-        label = ":green[**Please help us out by filling out a quick survey about your experience!**]",
+        label = "**Please help us out by filling out a quick survey about your experience!**",
         url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
-        type = "secondary",
+        type = "primary",
         use_container_width=False)
 
 if __name__ == "__main__":

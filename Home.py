@@ -10,7 +10,7 @@ from PIL import Image
 # Define the page config
 st.set_page_config(
     page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png",
-    initial_sidebar_state="auto"
+    initial_sidebar_state="collapsed"
 )
 
 st.markdown("#### Hello Beta Testers!")
@@ -18,13 +18,11 @@ st.markdown('''<div style="color: #262730; font-weight: bold; font-size: 20px; t
             <p>Thank you so much for helping us test drive the app.
            Starting out is simple.  Simply select whether or not you want to ask
            general bar questions or create a cocktail.  The goal is to help you come up
-           with creative ways to use up that pesky dead stock.  You will be allowed to generate
-           two cocktails on us, and then if you want to generate more, help us out by filling
-           out a <a href=""https://forms.office.com/Pages/ResponsePage.aspx?\
+           with creative ways to use up that pesky dead stock. Please help us by filling out a
+           <a href=""https://forms.office.com/Pages/ResponsePage.aspx?\
            id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u">
-           quick survey</a> about your experience.  Even if you don't want
-           to make more than two, please fill it out anyway to help us grow and improve the app.
-           Cheers!</p></div>''', unsafe_allow_html=True)
+           quick survey</a> about your experience.  It will help us grow and get better!
+           </p></div>''', unsafe_allow_html=True)
 st.markdown('---')
 
 

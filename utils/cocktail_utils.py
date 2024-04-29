@@ -15,7 +15,7 @@ logging.getLogger("openai").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 
 if "current_model" not in st.session_state:
-    st.session_state.current_model = "gpt-3.5-turbo-1106"
+    st.session_state.current_model = "gpt-3.5-turbo"
 
 async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
     """ Create a cocktail recipe """
@@ -40,7 +40,8 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
             as outlined above."""
         }
     ]
-
+    logger.info(f'Calling cocktail generation with model {st.session_state.current_model}')
+    st.write(f'Calling cocktail generation with model {st.session_state.current_model}')
     try:
         logger.debug("Creating cocktail recipe")
         # Assuming client has an async method for chat completions

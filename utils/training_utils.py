@@ -10,7 +10,7 @@ client = get_openai_client()
 logging.basicConfig(level=logging.DEBUG)
 
 core_models = [
-    "gpt-3.5-turbo-1106", "gpt-4-1106-preview"
+    "gpt-3.5-turbo", "gpt-4-turbo"
 ]
 
 async def create_training_guide(cocktail : dict):

@@ -51,11 +51,11 @@ def init_cocktail_session_variables():
 def set_model():
     if st.session_state["radio_value"] == 'GPT-3.5':
         logger.info("Setting the model to GPT-3.5")
-        st.session_state["current_model"] = "gpt-3.5-turbo-1106"
+        st.session_state["current_model"] = "gpt-3.5-turbo"
         logger.info(f"Current model: {st.session_state['current_model']}")
     elif st.session_state["radio_value"] == 'GPT-4':
         logger.info("Setting the model to GPT-4")
-        st.session_state["current_model"] = "gpt-4-1106-preview"
+        st.session_state["current_model"] = "gpt-4-turbo"
         logger.info(f"Current model: {st.session_state['current_model']}")
 
 # Initialize the session state variables
@@ -137,7 +137,10 @@ async def get_cocktail_info():
     col1, col2 = st.columns(2, gap="small")
     # Create the submit button
     with col1:
-        cocktail_submit_button = st.button(label='Create your cocktail!')
+        cocktail_submit_button = st.button(
+            label='Create your cocktail!',
+            type='primary'
+        )
         if cocktail_submit_button:
             with st.spinner('Creating your cocktail recipe.  This may take a minute...'):
                 st.session_state.current_cocktail = await create_cocktail(
@@ -151,15 +154,16 @@ async def get_cocktail_info():
             "**AI Model Selection**", ['**GPT-3.5**', '**GPT-4**'], index=0, horizontal=True,
             key="radio_value", on_change=set_model
         )
+    st.markdown('---')
     st.text("")
     general_chat_button = st.button(
-        "General Chat", type = "primary", use_container_width=True, key="gchat2"
+        "**General Chat**", type = "secondary", use_container_width=True, key="gchat2"
     )
     if general_chat_button:
         switch_page('General Chat')
         st.rerun()
     # Create a button to go back to the home page
-    home_button = st.button('Back to Home', type = 'primary', use_container_width=True)
+    home_button = st.button('**Home**', type = 'secondary', use_container_width=True)
     if home_button:
         switch_page('Home')
         st.rerun()
@@ -168,13 +172,13 @@ async def get_cocktail_info():
         label = "**Please help us out by filling out a quick survey about your experience!**",
         url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZ\
         trQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
-        type = "primary",
+        type = "secondary",
         use_container_width=True)
 
     st.link_button(
         label = "**Contact Us**",
         url = "mailto:dave_thomas@enoughwebapp.com",
-        type = "primary",
+        type = "secondary",
         use_container_width=True)
 async def display_recipe():
     if not st.session_state.current_cocktail:
@@ -270,10 +274,17 @@ async def display_recipe():
 
         st.link_button(
             label = "**Please help us out by filling out a quick survey about your experience!**",
-            url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtr\
-            QAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+            url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZ\
+            trQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
             type = "primary",
-            use_container_width=False)
+            use_container_width=True)
+
+        st.sidebar.link_button(
+            label = "**Please help us out by filling out a quick survey about your experience!**",
+            url = "https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u",
+            type = "primary",
+            use_container_width=False
+        )
 
         st.link_button(
             label = "**Contact Us**",
