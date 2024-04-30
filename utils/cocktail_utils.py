@@ -41,7 +41,6 @@ async def create_cocktail(liqour : str, type: str, cuisine: str, theme: str):
         }
     ]
     logger.info(f'Calling cocktail generation with model {st.session_state.current_model}')
-    st.write(f'Calling cocktail generation with model {st.session_state.current_model}')
     try:
         logger.debug("Creating cocktail recipe")
         # Assuming client has an async method for chat completions

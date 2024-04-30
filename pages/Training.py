@@ -8,11 +8,10 @@ st.set_page_config(
     page_title="BarKeepAI", page_icon="./resources/cocktail_icon.png", initial_sidebar_state="auto"
 )
 
-st.markdown("#### Beta Testers:")
-st.markdown('''
-        :blue[**Here we display the generated training guide for the cocktail.
+st.success('''
+        **Here we display the generated training guide for the cocktail.
         The idea is to generate a "one-pager" that
-        can easily be used for pre-shift and distribution to the staff. For menu options, click on the sidebar.**]
+        can easily be used for pre-shift and distribution to the staff. For menu options, click on the sidebar.**
         ''')
 st.markdown('---')
 
@@ -59,7 +58,7 @@ def display_training_guide():
         if st.session_state.cocktail_chat_messages:
             st.session_state.cocktail_chat_messages = None
         st.session_state.cocktail_page = "get_cocktail_info"
-        st.rerun()
+        switch_page('Create Cocktails')
 
     general_chat_button = st.sidebar.button('General Chat', use_container_width=True, type='secondary')
     if general_chat_button:
@@ -67,7 +66,7 @@ def display_training_guide():
         st.rerun()
 
     # Create a button to go back to the home page
-    home_button = st.sidebar.button('Back to Home', type = 'secondary', use_container_width=True)
+    home_button = st.sidebar.button('Home', type = 'secondary', use_container_width=True)
     if home_button:
         switch_page('Home')
         st.rerun()

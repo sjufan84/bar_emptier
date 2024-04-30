@@ -54,11 +54,11 @@ if not st.session_state.general_chat_messages:
 def general_chat():
     """ Chat bot to answer general bar questions """
     if len(st.session_state.general_chat_messages) == 1:
-        st.markdown(
-            """:red[The goal with this page is to help answer general bar questions.\
-            Of course you can always copy and paste a cocktail you have created to get answers\
-            to questions about that specific cocktail.  If you would like to create a cocktail,
-            select 'Create Cocktail' from the side bar.  Cheers!]"""
+        st.success(
+            """**This page is designed to help answer general bar questions.\
+            Simply type your question in the text input at the bottom of the page to get started.
+            If you would like to create a cocktail,
+            select 'Create Cocktail' from the sidebar.**"""
         )
 
     # Display chat messages from history on app rerun

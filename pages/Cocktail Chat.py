@@ -51,11 +51,11 @@ def cocktail_chat():
     recipe = st.session_state.current_cocktail
 
     if len(st.session_state.cocktail_chat_messages) == 1:
-        st.markdown(
-            """:violet[**The goal with this page is to help answer questions about a
+        st.success(
+            """**The goal with this page is to help answer questions about a
             generated cocktail.  This could be questions about ingredients, changes you want to make,
             etc.  If you need to reference the cocktail, click 'Show Recipe' on the sidebar.
-            Of course the model can answer general bar questions as well.**]"""
+            Of course the model can answer general bar questions as well.**"""
         )
 
     # Display chat messages from history on app rerun

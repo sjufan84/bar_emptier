@@ -94,11 +94,11 @@ spirits_list = [
 async def get_cocktail_info():
     """ This is the main entry point for the user to create cocktails """
     st.markdown("#### Hello Beta Testers!")
-    st.markdown(
-        ''':red[This page should be pretty straightforward.  You will notice the option to select
+    st.success(
+        '''**This page should be pretty straightforward.  You will notice the option to select
         between 'GPT-3.5' and 'GPT-4'.  GPT-4 will theoretically generate more nuanced and robust
         cocktails, but will take a bit longer to generate.  Feel free to play around with each, and let us
-        know what you think!]'''
+        know what you think!**'''
     )
 
     # Create the header
@@ -231,9 +231,9 @@ async def display_recipe():
             st.image(st.session_state.current_image, use_column_width=True)
         # Markdown "AI image generate by [StabilityAI](https://stabilityai.com)"]"
         st.markdown('''<div style="text-align: center;">
-        <p>AI cocktail image generated using the Dall-E-2 by OpenAI.</p>
+        <p>AI cocktail image generated using "dall-e-3" by OpenAI.</p>
         </div>''', unsafe_allow_html=True)
-        st.markdown(':violet[**Note:** The actual cocktail may not look exactly like this!]')
+        st.markdown(':violet[**Note:**] The actual cocktail may not look exactly like this!')
 
         # pdf_download_link = await get_recipe_pdf_download_link(
         #    recipe = recipe, recipe_name = recipe["name"]
@@ -242,7 +242,7 @@ async def display_recipe():
 
         # Create an option to chat about the recipe
         chat_button = st.button(
-            'Questions about the recipe?  Click here to chat with a bartender about it.',
+            '**Questions about the recipe?  Click here to chat with a bartender about it.**',
             type = 'primary', use_container_width=True
         )
         if chat_button:
@@ -251,7 +251,7 @@ async def display_recipe():
 
         #  Create an option to generate a training guide
         training_guide_button = st.button(
-            'Click here to generate a training guide for this recipe.',
+            '**Click here to generate a training guide for this recipe.**',
             type = 'primary', use_container_width=True)
         if training_guide_button:
             with st.spinner('Generating training guide...'):
@@ -261,7 +261,7 @@ async def display_recipe():
                     st.rerun()
 
         # Create an option to get a new recipe
-        new_recipe_button = st.button('Get a new recipe', type = 'primary', use_container_width=True)
+        new_recipe_button = st.button('**Get a new recipe**', type = 'primary', use_container_width=True)
         if new_recipe_button:
             # Clear the session state variables
             st.session_state.current_cocktail = None
