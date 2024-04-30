@@ -56,7 +56,7 @@ def display_training_guide():
         st.session_state.current_image = None
         # Clear the recipe and chat history
         if st.session_state.cocktail_chat_messages:
-            st.session_state.cocktail_chat_messages = None
+            st.session_state.cocktail_chat_messages = []
         st.session_state.cocktail_page = "get_cocktail_info"
         switch_page('Create Cocktails')
 

@@ -40,7 +40,7 @@ def init_cocktail_session_variables():
         "cocktail_chat_messages", "current_model", "model_selection"
     ]
     default_values = [
-        None, None, "get_cocktail_info", None, None, "gpt-3.5-turbo-1106", "GPT-3.5"
+        None, None, "get_cocktail_info", None, [], "gpt-3.5-turbo", "GPT-3.5"
     ]
 
     for var, default_value in zip(session_vars, default_values):
@@ -268,7 +268,7 @@ async def display_recipe():
             st.session_state.current_image = None
             # Clear the recipe and chat history
             if st.session_state.cocktail_chat_messages:
-                st.session_state.cocktail_chat_messages = None
+                st.session_state.cocktail_chat_messages = []
             st.session_state.cocktail_page = "get_cocktail_info"
             st.rerun()
 
