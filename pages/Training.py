@@ -79,7 +79,7 @@ def display_training_guide():
 
     st.sidebar.link_button(
         label = "**Contact Us**",
-        url = "mailto:dave_thomas@enoughwebapp.com",
+        url = "mailto:barguru@enoughwebapp.com",
         type = "secondary",
         use_container_width=True)
 

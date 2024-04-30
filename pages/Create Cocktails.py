@@ -177,7 +177,7 @@ async def get_cocktail_info():
 
     st.link_button(
         label = "**Contact Us**",
-        url = "mailto:dave_thomas@enoughwebapp.com",
+        url = "mailto:barguru@enoughwebapp.com",
         type = "secondary",
         use_container_width=True)
 async def display_recipe():
@@ -288,7 +288,7 @@ async def display_recipe():
 
         st.link_button(
             label = "**Contact Us**",
-            url = "mailto:dave_thomas@enoughwebapp.com",
+            url = "mailto:barguru@enoughwebapp.com",
             type = "primary",
             use_container_width=True)
 
