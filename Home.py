@@ -19,8 +19,7 @@ st.markdown('''<div style="color: red; font-weight: bold; font-size: 20px; text-
            Starting out is simple.  Simply select whether or not you want to ask
            general bar questions or create a cocktail.  The goal is to help you come up
            with creative ways to use up that pesky dead stock. Please help us by filling out a
-           <a href="https://forms.office.com/Pages/ResponsePage.aspx?\
-           id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u">
+           <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAVtWsJ1UM0xEWjVGMVEyM1hURldWWU5JRVhPWUJZVy4u">
            quick survey</a> about your experience.  It will help us grow and get better!
            </p></div>''', unsafe_allow_html=True)
 st.markdown('---')
