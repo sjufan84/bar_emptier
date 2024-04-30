@@ -224,7 +224,7 @@ async def display_recipe():
         if not st.session_state.current_image:
             with st.spinner('Generating cocktail image...'):
                 # Generate the image
-                image_prompt = f'''A cocktail named {recipe["name"]}
+                image_prompt = f'''Hyper-realistic photograph of a cocktail named {recipe["name"]}
                 garnished with {recipe["garnish"]} in a {recipe["glass"]} glass.'''
                 st.session_state.current_image = await generate_image(image_prompt)
         if st.session_state.current_image:
