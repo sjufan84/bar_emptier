@@ -9,7 +9,7 @@ st.set_page_config(
 )
 
 if "cocktail_chat_messages" not in st.session_state:
-    st.session_state.cocktail_chat_messages = None
+    st.session_state.cocktail_chat_messages = []
 if "show_recipe" not in st.session_state:
     st.session_state.show_recipe = False
 if "current_cocktail" not in st.session_state:
@@ -20,22 +20,21 @@ client = get_openai_client()
 IMG_PATH = "./resources/mixologist1.png"  # Replace with your image's path
 mixologist_image = Image.open(IMG_PATH)
 
-initial_message = {
-    "role": "system",
-    "content": f"""
-    You are a master mixologist who has created a new cocktail recipe
-    {st.session_state.current_cocktail} for a user,
-    helping them creatively use up their excess inventory.
-    They would like to ask you some follow up questions about the recipe.
-    Your tone should be warm and welcoming while having high standards and a passion for the
-    details. Your recent chat history is {st.session_state.cocktail_chat_messages}.  Keep
-    the conversation open-ended, asking follow up questions such as 'Is there anything
-    else I can help you with?' or whatever seems appropriate.
-    """
-}
-
-if not st.session_state.cocktail_chat_messages:
-    st.session_state.cocktail_chat_messages = [initial_message]
+initial_message = [
+    {
+      "role": "system",
+      "content": f"""
+      You are a master mixologist who has created a new cocktail recipe
+      {st.session_state.current_cocktail} for a user,
+      helping them creatively use up their excess inventory.
+      They would like to ask you some follow up questions about the recipe.
+      Your tone should be warm and welcoming while having high standards and a passion for the
+      details. Your recent chat history is {st.session_state.cocktail_chat_messages}.  Keep
+      the conversation open-ended, asking follow up questions such as 'Is there anything
+      else I can help you with?' or whatever seems appropriate.
+      """
+    }
+]
 
 def cocktail_chat():
     """ Chat bot to answer questions about a specific cocktail """
@@ -50,7 +49,7 @@ def cocktail_chat():
         st.stop()
     recipe = st.session_state.current_cocktail
 
-    if len(st.session_state.cocktail_chat_messages) == 1:
+    if len(st.session_state.cocktail_chat_messages) == 0:
         st.success(
             """**The goal with this page is to help answer questions about a
             generated cocktail.  This could be questions about ingredients, changes you want to make,
@@ -84,7 +83,7 @@ def cocktail_chat():
 
             response = client.chat.completions.create(
                 model="gpt-4-turbo",
-                messages=st.session_state.cocktail_chat_messages,
+                messages=initial_message + st.session_state.cocktail_chat_messages,
                 stream=True,
                 temperature=0.6,
                 max_tokens=750,
