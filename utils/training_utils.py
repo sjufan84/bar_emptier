@@ -2,18 +2,14 @@
 import logging
 from openai import OpenAIError
 from dependencies import get_openai_client
-
+from models.recipes import Cocktail
 # Load the OpenAI client
 client = get_openai_client()
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-core_models = [
-    "gpt-3.5-turbo", "gpt-4-turbo"
-]
-
-async def create_training_guide(cocktail : dict):
+async def create_training_guide(cocktail : Cocktail):
     """ Create a training guide for a cocktail."""
     messages = [
         {
@@ -29,24 +25,23 @@ async def create_training_guide(cocktail : dict):
             their guests."""
         }
     ]
+    try:
+        logging.debug("Trying model: gpt-4o-mini")
+        # Assuming client has an async method for chat completions
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            temperature=0.75,
+            top_p=1,
+            max_tokens=750,
+        )
+        training_response = response.choices[0].message.content
+        logging.debug("Response: %s", training_response)
+        return training_response
+    except OpenAIError as e:
+        logging.error("Error with model: %s. Error: %s", "gpt-4o-mini", e)
 
-    for model in core_models:
-        try:
-            logging.debug("Trying model: %s.", model)
-            # Assuming client has an async method for chat completions
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.75,
-                top_p=1,
-                max_tokens=750,
-            )
-            training_response = response.choices[0].message.content
-            logging.debug("Response: %s", training_response)
-            return training_response
-
-        except OpenAIError as e:
-            logging.error("Error with model: %s. Error: %s", model, e)
-            continue
+    except Exception as e:
+        logging.error("Error with model: %s. Error: %s", "gpt-4o-mini", e)
 
     return None  # Return None or a default response if all models fail

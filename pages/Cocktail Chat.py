@@ -22,17 +22,17 @@ mixologist_image = Image.open(IMG_PATH)
 
 initial_message = [
     {
-      "role": "system",
-      "content": f"""
-      You are a master mixologist who has created a new cocktail recipe
-      {st.session_state.current_cocktail} for a user,
-      helping them creatively use up their excess inventory.
-      They would like to ask you some follow up questions about the recipe.
-      Your tone should be warm and welcoming while having high standards and a passion for the
-      details. Your recent chat history is {st.session_state.cocktail_chat_messages}.  Keep
-      the conversation open-ended, asking follow up questions such as 'Is there anything
-      else I can help you with?' or whatever seems appropriate.
-      """
+        "role": "system",
+        "content": f"""
+        You are a master mixologist who has created a new cocktail recipe
+        {st.session_state.current_cocktail} for a user,
+        helping them creatively use up their excess inventory.
+        They would like to ask you some follow up questions about the recipe.
+        Your tone should be warm and welcoming while having high standards and a passion for the
+        details. Your recent chat history is {st.session_state.cocktail_chat_messages}.  Keep
+        the conversation open-ended, asking follow up questions such as 'Is there anything
+        else I can help you with?' or whatever seems appropriate.
+        """
     }
 ]
 
@@ -67,7 +67,7 @@ def cocktail_chat():
                 st.markdown(message["content"])
 
     # Accept user input
-    if prompt := st.chat_input(f"What questions can I answer about the {recipe['name']}?"):
+    if prompt := st.chat_input(f"What questions can I answer about the {recipe.name}?"):
         with st.spinner("Grabbing the shaker..."):
             # Add user message to chat history
             st.session_state.cocktail_chat_messages.append({"role": "user", "content": prompt})
@@ -82,7 +82,7 @@ def cocktail_chat():
                 full_response = ""
 
             response = client.chat.completions.create(
-                model="gpt-4-turbo",
+                model="gpt-4o-mini",
                 messages=initial_message + st.session_state.cocktail_chat_messages,
                 stream=True,
                 temperature=0.6,
@@ -109,23 +109,23 @@ def cocktail_chat():
 
         # Display the recipe ingredients
         st.sidebar.markdown(':blue[**Ingredients:**]')
-        ingredients_list = recipe['ingredients']
+        ingredients_list = recipe.ingredients
         # Convert the ingredients tuple into a list
         for ingredient in ingredients_list:
             st.sidebar.markdown(f'{ingredient}')
         # Display the recipe instructions
         st.sidebar.markdown(':blue[**Directions:**]')
-        for direction in recipe['directions']:
+        for direction in recipe.directions:
             st.sidebar.markdown(f'{direction}')
         # Display the recipe garnish
-        st.sidebar.markdown(f':blue[**Garnish:**] {recipe["garnish"]}')
+        st.sidebar.markdown(f':blue[**Garnish:**] {recipe.garnish}')
         # Display the recipe glass
-        st.sidebar.markdown(f':blue[**Glass:**] {recipe["glass"]}')
+        st.sidebar.markdown(f':blue[**Glass:**] {recipe.glass}')
         # Display the recipe description
-        st.sidebar.markdown(f':blue[**Description:**] {recipe["description"]}')
+        st.sidebar.markdown(f':blue[**Description:**] {recipe.description}')
         # Display the recipe fun fact
-        if recipe["fun_fact"]:
-            st.sidebar.markdown(f':blue[**Fun Fact:**] {recipe["fun_fact"]}')
+        if recipe.fun_fact:
+            st.sidebar.markdown(f':blue[**Fun Fact:**] {recipe.fun_fact}')
 
     back_to_cocktail_button = st.sidebar.button(
         "Back to Main Cocktail Page", use_container_width=True, type='secondary'

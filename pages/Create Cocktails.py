@@ -37,32 +37,18 @@ def init_cocktail_session_variables():
     # Initialize session state variables
     session_vars = [
         "current_cocktail", "current_image", "cocktail_page", "training_guide",
-        "cocktail_chat_messages", "current_model", "model_selection"
+        "cocktail_chat_messages"
     ]
     default_values = [
-        None, None, "get_cocktail_info", None, [], "gpt-3.5-turbo", "GPT-3.5"
+        None, None, "get_cocktail_info", None, []
     ]
 
     for var, default_value in zip(session_vars, default_values):
         if var not in st.session_state:
             st.session_state[var] = default_value
 
-# Define the callback function to update the session state
-def set_model():
-    if st.session_state["radio_value"] == 'GPT-3.5':
-        logger.info("Setting the model to GPT-3.5")
-        st.session_state["current_model"] = "gpt-3.5-turbo"
-        logger.info(f"Current model: {st.session_state['current_model']}")
-    elif st.session_state["radio_value"] == 'GPT-4':
-        logger.info("Setting the model to GPT-4")
-        st.session_state["current_model"] = "gpt-4-turbo"
-        logger.info(f"Current model: {st.session_state['current_model']}")
-
 # Initialize the session state variables
 init_cocktail_session_variables()
-
-# Reset the pages to their default values
-# def reset_pages():
 
 # Create a list of commnonly used spirits that the user can choose from
 spirits_list = [
@@ -92,15 +78,7 @@ spirits_list = [
 ]
 
 async def get_cocktail_info():
-    """ This is the main entry point for the user to create cocktails """
-    st.markdown("#### Hello Beta Testers!")
-    st.success(
-        '''**This page should be pretty straightforward.  You will notice the option to select
-        between 'GPT-3.5' and 'GPT-4'.  GPT-4 will theoretically generate more nuanced and robust
-        cocktails, but will take a bit longer to generate.  Feel free to play around with each, and let us
-        know what you think!**'''
-    )
-
+    """ Get the cocktail info from the user """
     # Create the header
     st.markdown('''<div style="text-align: center;">
     <h2>Tell us about the cocktail you want to create!</h2>
@@ -149,11 +127,6 @@ async def get_cocktail_info():
                 if st.session_state.current_cocktail:
                     st.session_state.cocktail_page = "display_recipe"
                     st.rerun()
-    with col2:
-        st.radio(
-            "**AI Model Selection**", ['**GPT-3.5**', '**GPT-4**'], index=0, horizontal=True,
-            key="radio_value", on_change=set_model
-        )
     st.markdown('---')
     st.text("")
     general_chat_button = st.button(
@@ -195,37 +168,37 @@ async def display_recipe():
     col1, col2 = st.columns([1.5, 1], gap = "large")
     with col1:
         # Display the recipe name
-        st.markdown(f':violet[**Recipe Name:**]  {recipe["name"]}')
+        st.markdown(f':violet[**Recipe Name:**]  {recipe.name}')
         # Convert the ingredients tuples into a list of strings
 
         # Display the recipe ingvioletients
         st.markdown(':violet[**Ingredients:**]')
-        ingredients_list = recipe['ingredients']
+        ingredients_list = recipe.ingredients
         # Convert the ingredients tuple into a list
         for ingredient in ingredients_list:
             st.markdown(f'{ingredient}')
         # Display the recipe instructions
         st.markdown(':violet[**Directions:**]')
-        for direction in recipe['directions']:
+        for direction in recipe.directions:
             st.markdown(f'{direction}')
         # Display the recipe garnish
-        st.markdown(f':violet[**Garnish:**] {recipe["garnish"]}')
+        st.markdown(f':violet[**Garnish:**] {recipe.garnish}')
         # Display the recipe glass
-        st.markdown(f':violet[**Glass:**] {recipe["glass"]}')
+        st.markdown(f':violet[**Glass:**] {recipe.glass}')
         # Display the recipe description
-        st.markdown(f':violet[**Description:**] {recipe["description"]}')
+        st.markdown(f':violet[**Description:**] {recipe.description}')
         # Display the recipe fun fact
-        if recipe["fun_fact"]:
-            st.markdown(f':violet[**Fun Fact:**] {recipe["fun_fact"]}')
+        if recipe.fun_fact:
+            st.markdown(f':violet[**Fun Fact:**] {recipe.fun_fact}')
     with col2:
         # Display the recipe name
-        st.markdown(f'<div style="text-align: center;">{recipe["name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center;">{recipe.name}</div>', unsafe_allow_html=True)
         st.text("")
         if not st.session_state.current_image:
             with st.spinner('Generating cocktail image...'):
                 # Generate the image
-                image_prompt = f'''Hyper-realistic photograph of a cocktail named {recipe["name"]}
-                garnished with {recipe["garnish"]} in a {recipe["glass"]} glass.'''
+                image_prompt = f'''Hyper-realistic photograph of a cocktail named {recipe.name}
+                garnished with {recipe.garnish} in a {recipe.glass} glass.'''
                 st.session_state.current_image = await generate_image(image_prompt)
         if st.session_state.current_image:
             st.image(st.session_state.current_image, use_column_width=True)

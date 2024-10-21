@@ -87,7 +87,7 @@ def general_chat():
                 full_response = ""
 
             response = client.chat.completions.create(
-                model="gpt-4-1106-preview",
+                model="gpt-4o-mini",
                 messages=st.session_state.general_chat_messages,
                 stream=True,
                 temperature=0.6,

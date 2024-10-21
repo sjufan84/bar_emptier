@@ -40,19 +40,19 @@ async def recipe_to_html(recipe: dict):
     <h2>Ingredients:</h2>
     <ul>
     '''
-    for ingredient in recipe["ingredients"]:
+    for ingredient in recipe.ingredients:
         html_content += f"<li>{ingredient}</li>"
     html_content += "</ul>"
-    html_content += f"<h2>Directions:</h2><ol>"
-    for direction in recipe["directions"]:
+    html_content += "<h2>Directions:</h2><ol>"
+    for direction in recipe.directions:
         html_content += f"<li>{direction}</li>"
     html_content += "</ol>"
-    html_content += f"<h2>Glass:</h2><p>{recipe['glass']}</p>"
-    if "garnish" in recipe:
-        html_content += f"<h2>Garnish:</h2><p>{recipe['garnish']}</p>"
-    html_content += f"<h2>Description:</h2><p>{recipe['description']}</p>"
-    if "fun_fact" in recipe:
-        html_content += f"<h2>Fun Fact:</h2><p>{recipe['fun_fact']}</p>"
+    html_content += f"<h2>Glass:</h2><p>{recipe.glass}</p>"
+    if recipe.garnish:
+        html_content += f"<h2>Garnish:</h2><p>{recipe.garnish}</p>"
+    html_content += f"<h2>Description:</h2><p>{recipe.description}</p>"
+    if recipe.fun_fact:
+        html_content += f"<h2>Fun Fact:</h2><p>{recipe.fun_fact}</p>"
     html_content += "</body></html>"
 
     return html_content

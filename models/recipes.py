@@ -1,5 +1,5 @@
 """ Recipe Pydantic Models """
-from typing import List, Optional, Union
+from typing import List
 from pydantic import Field, BaseModel
 
 class Cocktail(BaseModel):
@@ -15,9 +15,10 @@ class Cocktail(BaseModel):
         ..., description='The recommended type of glass for the recipe.', example='Rocks Glass'
     )
     garnish: str = Field(..., description='The garnish for the recipe', example='Orange Twist')
-    fun_fact: Optional[Union[str, None]] = Field(
+    fun_fact: str = Field(
         None, example='A fun fact about the Old Fashioned is the official cocktail of Louisville, Kentucky.',
-        description='A fun fact about the recipe or its ingredients.')
+        description='A fun and intriguing fact about the cocktail, a conversation starter, not just\
+          a commonly known fact.  Should be a fact that is not obvious to someone who knows the cocktail.')
     description: str = Field(
         ..., example='This cocktail is an innovative take on the classic Old Fashioned, and will help you\
         use up your bourbon.', description='A short description of the recipe and why you\

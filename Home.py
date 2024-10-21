@@ -14,7 +14,7 @@ st.set_page_config(
 )
 
 st.markdown("#### Hello Beta Testers!")
-st.markdown('''<div style="color: red; font-weight: bold; font-size: 20px; text-align: left;">
+st.markdown('''<div style="color: red; font-weight: bold; font-size: 32px; text-align: left;">
             <p>Thank you so much for helping us test drive the app.
            Starting out is simple.  Simply select whether or not you want to ask
            general bar questions or create a cocktail.  The goal is to help you come up
