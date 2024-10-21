@@ -104,10 +104,10 @@ def cocktail_chat():
         st.session_state.show_recipe = not st.session_state.show_recipe
     if st.session_state.show_recipe:
         # Display the recipe name
-        st.sidebar.markdown(f':blue[**Recipe Name:**]  {recipe["name"]}')
+        st.sidebar.markdown(f':blue[**Recipe Name:**]  {recipe.name}')
         # Convert the ingredients tuples into a list of strings
 
-        # Display the recipe ingredients
+        # Display the recipe ingredients  
         st.sidebar.markdown(':blue[**Ingredients:**]')
         ingredients_list = recipe.ingredients
         # Convert the ingredients tuple into a list
