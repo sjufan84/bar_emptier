@@ -80,4 +80,4 @@ Future Plans
 - If you are interested in becoming a maintainer of the project, please contact me below.
 
 Contact
-If you have any questions or suggestions, feel free to reach out via [e-mail](mailto:barguru@enoughwebapp.com) or [LinkedIn](www.linkedin.com/in/david-s-thomas-1b655254).
+If you have any questions or suggestions, feel free to reach out via [e-mail](mailto:barguru@enoughwebapp.com) or [LinkedIn](https://www.linkedin.com/in/david-s-thomas-1b655254).
