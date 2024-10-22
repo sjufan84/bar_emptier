@@ -73,10 +73,11 @@ License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 Future Plans
-- We’re working on evolving the project to a more robust framework such as Next.js for enhanced scalability and performance, although this is not currently set in stone. Contributions to help with this transition are encouraged!
+- We’re working on evolving the project to a more robust framework such as Next.js for enhanced scalability and performance, although this is not currently set in stone. Contributions to help with this transition are encouraged!  A discussion is currently open through 11/15 to gather feedback on next steps.
 - We also want to move toward a more robust backend framework and structure for database integrations, etc.  Ideas and comments are welcome.
 - We would love to partner with industry leaders including bartenders, distilleries, distributors, and anyone else looking to get involved.
 - We are looking for sponsors and sustaining partners.
+- If you are interested in becoming a maintainer of the project, please contact me below.
 
 Contact
 If you have any questions or suggestions, feel free to reach out via [e-mail](mailto:barguru@enoughwebapp.com) or [LinkedIn](www.linkedin.com/in/david-s-thomas-1b655254).
